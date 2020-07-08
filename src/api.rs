@@ -155,15 +155,17 @@ pub async fn add_event(
         let mut t = start.clone();
         while t <= end {
             let t_next = t + Duration::hours(1);
-            let existing_count = dsl::occupancies
+            let overlapping_existing: Vec<_> = dsl::occupancies
                 .filter(dsl::room.eq(&room.id))
-                .filter(dsl::start.le(t_next.naive_utc()))
-                .filter(dsl::end.ge(t.naive_utc()))
-                .load::<Occupancy>(&conn)?
-                .into_iter()
-                .count();
+                .filter(dsl::start.lt(t_next.naive_utc()))
+                .filter(dsl::end.gt(t.naive_utc()))
+                .load::<Occupancy>(&conn)?;
 
-            if existing_count as i32 >= room.max_occupancy {
+            if overlapping_existing.len() as i32 >= room.max_occupancy {
+                debug!(
+                    "Too many overlapping existing events for room {} and new time {}-{}: {:?}",
+                    &room.id, t, t_next, overlapping_existing
+                );
                 return Ok(HttpResponse::Forbidden().json("Room already full"));
             }
 

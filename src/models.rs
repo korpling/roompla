@@ -22,7 +22,7 @@ pub struct NewOccupancy {
     pub room: String,
 }
 
-#[derive(QueryableByName, Queryable)]
+#[derive(QueryableByName, Queryable, Debug)]
 #[table_name = "occupancies"]
 pub struct Occupancy {
     pub id: i32,
