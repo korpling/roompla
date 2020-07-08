@@ -1,3 +1,3 @@
-DROP TABLE presency;
-DROP TABLE user;
-DROP TABLE room;
+DROP TABLE presencies;
+DROP TABLE users;
+DROP TABLE rooms;

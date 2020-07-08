@@ -1,8 +1,8 @@
 table! {
     presencies (id) {
         id -> Integer,
-        from -> Text,
-        to -> Text,
+        from -> Timestamp,
+        to -> Timestamp,
         user -> Text,
         room -> Text,
     }
@@ -22,8 +22,4 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(
-    presencies,
-    rooms,
-    users,
-);
+allow_tables_to_appear_in_same_query!(presencies, rooms, users,);

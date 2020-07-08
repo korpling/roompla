@@ -14,7 +14,7 @@ pub struct User {
 }
 
 #[derive(Insertable)]
-#[table_name="presencies"]
+#[table_name = "presencies"]
 pub struct NewPresency {
     pub from: NaiveDateTime,
     pub to: NaiveDateTime,
@@ -22,9 +22,8 @@ pub struct NewPresency {
     pub room: String,
 }
 
-
 #[derive(QueryableByName)]
-#[table_name="presencies"]
+#[table_name = "presencies"]
 pub struct Presency {
     pub id: i32,
     pub from: NaiveDateTime,

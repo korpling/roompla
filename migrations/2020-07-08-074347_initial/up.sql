@@ -11,8 +11,8 @@ CREATE TABLE users (
 
 CREATE TABLE presencies (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "from" TEXT NOT NULL,
-    "to" TEXT NOT NULL,
+    "from" TIMESTAMP NOT NULL,
+    "to" TIMESTAMP NOT NULL,
     user TEXT NOT NULL REFERENCES user(id),
     room TEXT NOT NULL REFERENCES room(id)
 );

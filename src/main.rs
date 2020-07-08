@@ -1,21 +1,35 @@
 #[macro_use]
 extern crate diesel;
-extern crate dotenv;
+#[macro_use]
+extern crate serde_derive;
+#[macro_use]
+extern crate log;
 
-use anyhow::Error;
-use chrono::{Duration, Utc};
+use actix_cors::Cors;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
-use std::env;
+use simplelog::{LevelFilter, SimpleLogger, TermLogger};
+use std::{
+    env,
+    io::{Error, ErrorKind, Result},
+};
 
+use actix_web::{
+    http::{self, ContentEncoding},
+    middleware::{Compress, Logger},
+    web, App, HttpRequest, HttpServer,
+};
+
+pub mod api;
+pub mod errors;
 pub mod models;
 pub mod schema;
 
 type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
-fn open_db_pool() -> Result<DbPool, Error> {
-    dotenv().ok();
+fn open_db_pool() -> anyhow::Result<DbPool> {
+    dotenv()?;
 
     let database_url = env::var("DATABASE_URL")?;
 
@@ -24,39 +38,64 @@ fn open_db_pool() -> Result<DbPool, Error> {
     Ok(db_pool)
 }
 
-fn main() -> Result<(), Error> {
-    let db_pool = open_db_pool()?;
+async fn get_api_spec(_req: HttpRequest) -> web::HttpResponse {
+    web::HttpResponse::Ok()
+        .content_type("application/x-yaml")
+        .body(include_str!("openapi.yml"))
+}
 
-    // Insert some test data
-    let conn = db_pool.get()?;
+#[actix_rt::main]
+async fn main() -> Result<()> {
+    // Init logging
+    let log_filter = LevelFilter::Debug;
 
-    let new_room = models::Room {
-        id: "3.333".to_string(),
-        max_occupancy: 2,
-    };
-    let new_user = models::User {
-        id: "krauseto".to_string(),
-        password_hash: None,
-    };
-    let now = Utc::now();
-    let new_event = models::NewPresency {
-        from: now.naive_local(),
-        to: (now + Duration::hours(1)).naive_local(),
-        user: "krauseto".to_string(),
-        room: "3.333".to_string(),
-    };
+    let log_config = simplelog::ConfigBuilder::new()
+        .add_filter_ignore_str("rustyline:")
+        .build();
 
-    diesel::insert_into(schema::rooms::table)
-        .values(new_room)
-        .execute(&conn)?;
+    if let Err(e) = TermLogger::init(
+        log_filter,
+        log_config.clone(),
+        simplelog::TerminalMode::Mixed,
+    ) {
+        println!("Error, can't initialize the terminal log output: {}.\nWill degrade to a more simple logger", e);
+        if let Err(e_simple) = SimpleLogger::init(log_filter, log_config) {
+            println!("Simple logging failed too: {}", e_simple);
+        }
+    }
 
-    diesel::insert_into(schema::users::table)
-        .values(new_user)
-        .execute(&conn)?;
+    info!("Logging with level {}", log_filter);
 
-    diesel::insert_into(schema::presencies::table)
-        .values(new_event)
-        .execute(&conn)?;
+    let db_pool = open_db_pool().map_err(|e| {
+        Error::new(
+            ErrorKind::Other,
+            format!("Could not initialize service: {:?}", e),
+        )
+    })?;
 
-    Ok(())
+    let bind_address = format!("localhost:5050");
+    let api_version = format!("/v{}", env!("CARGO_PKG_VERSION_MAJOR"),);
+
+    let db_pool = web::Data::new(db_pool);
+
+    HttpServer::new(move || {
+        App::new()
+            .app_data(db_pool.clone())
+            .wrap(
+                Cors::new()
+                    .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
+                    .allowed_header(http::header::CONTENT_TYPE)
+                    .finish(),
+            )
+            .wrap(Logger::default())
+            .wrap(Compress::new(ContentEncoding::Gzip))
+            .service(
+                web::scope(&api_version)
+                    .route("openapi.yml", web::get().to(get_api_spec))
+                    .route("/login", web::post().to(api::login)),
+            )
+    })
+    .bind(bind_address)?
+    .run()
+    .await
 }
