@@ -94,7 +94,8 @@ async fn main() -> Result<()> {
                 web::scope(&api_version)
                     .route("openapi.yml", web::get().to(get_api_spec))
                     .route("/login", web::post().to(api::login))
-                    .route("/add", web::post().to(api::add_event)),
+                    .route("/rooms/{room}/occupancies", web::put().to(api::add_event))
+                    .route("/rooms", web::get().to(api::all_rooms)),
             )
     })
     .bind(bind_address)?

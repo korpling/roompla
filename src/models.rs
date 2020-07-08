@@ -1,7 +1,7 @@
 use super::schema::*;
 use chrono::prelude::*;
 
-#[derive(Queryable, Insertable)]
+#[derive(Queryable, Insertable, Serialize)]
 pub struct Room {
     pub id: String,
     pub max_occupancy: i32,
@@ -13,7 +13,7 @@ pub struct User {
     pub password_hash: Option<String>,
 }
 
-#[derive(Insertable)]
+#[derive(Insertable, Serialize, Clone)]
 #[table_name = "occupancies"]
 pub struct NewOccupancy {
     pub start: NaiveDateTime,

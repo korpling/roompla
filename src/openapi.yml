@@ -13,39 +13,57 @@ security:
 
 paths:
   /login:
-      post:
-        summary: Create JWT token for credentials of an account.
-        requestBody:
-          description: Object with the user ID and password to login with
-          required: true
+    post:
+      summary: Create JWT token for credentials of an account.
+      requestBody:
+        description: Object with the user ID and password to login with
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - password
+              properties:
+                user_id:
+                  type: string
+                password:
+                  type: string
+      responses:
+        "200":
+          description: Returns a JSON Web Token (JWT), valid until its expiration time is reached.
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: JSON Web Token (JWT)
+                example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZXhwIjoiMTU5MjE0NzE5NiIsImNvcnB1c19ncm91cHMiOlsiYWNhZGVtaWMiLCJpbnRlcm5hbCJdLCJhZG1pbiI6ZmFsc2V9._eVf-gPknBlqobOOB83p2bFjf0ws9-mkqb1UkM4rMRg"
+
+        "401":
+          description: Unauthorized
+  /rooms:
+    get:
+      summary: Get all rooms in the system
+      responses:
+        default:
+          description: A list of rooms
           content:
             application/json:
               schema:
-                type: object
-                required:
-                  - user_id
-                  - password
-                properties:
-                  user_id:
-                    type: string
-                  password:
-                    type: string
-        responses:
-          "200":
-            description: Returns a JSON Web Token (JWT), valid until its expiration time is reached.
-            content:
-              text/plain:
-                schema:
-                  type: string
-                  description: JSON Web Token (JWT)
-                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwiZXhwIjoiMTU5MjE0NzE5NiIsImNvcnB1c19ncm91cHMiOlsiYWNhZGVtaWMiLCJpbnRlcm5hbCJdLCJhZG1pbiI6ZmFsc2V9._eVf-gPknBlqobOOB83p2bFjf0ws9-mkqb1UkM4rMRg"
-
-          "401":
-            description: Unauthorized
+                type: array
+                items:
+                  $ref: "#/components/schemas/Room"
 
   /rooms/{room}/occupancies:
     put:
-      summary: Add a new occupancy entry 
+      summary: Add a new occupancy entry
+      parameters:
+        - name: room
+          required: true
+          in: path
+          schema:
+            type: string
       requestBody:
         required: true
         content:
@@ -59,9 +77,6 @@ paths:
                 end:
                   type: string
                   description: RFC 3339 formatted end time in UTC and truncated to hourly precision
-                room:
-                  type: string
-                  description: The ID of the room to register a presence in
       responses:
         default:
           description: The new entry
@@ -69,7 +84,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Occupancy"
-                
 
 components:
   securitySchemes:
@@ -85,12 +99,26 @@ components:
         start:
           type: string
           description: RFC 3339 formatted start time in UTC and truncated to hourly precision
+          example: 2020-07-08T13:00:00+02:00
         end:
           type: string
           description: RFC 3339 formatted end time in UTC and truncated to hourly precision
+          example: 2020-07-08T17:00:00+02:00
         room:
           type: string
           description: The ID of the room that is occupied
         user:
           type: string
           description: The ID of the user that occupies this room
+
+    Room:
+      type: object
+      properties:
+        id:
+          type: string
+          description: ID/Name of the room
+          example: 3.333
+        max_occupancy:
+          type: integer
+          description: Maximum number of occupants at the same time
+          example: 2

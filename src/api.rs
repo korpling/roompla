@@ -104,14 +104,27 @@ pub async fn login(
 }
 
 #[derive(Deserialize)]
-pub struct NewEvent {
+pub struct TimeRange {
     pub start: String,
     pub end: String,
-    pub room: String,
+}
+
+pub async fn all_rooms(
+    db_pool: web::Data<DbPool>,
+    _claims: ClaimsFromAuth,
+) -> Result<HttpResponse, ServiceError> {
+    let conn = db_pool.get()?;
+
+    // Get the general room capacity
+    use crate::schema::rooms;
+    let rooms: Vec<Room> = rooms::dsl::rooms.load(&conn)?;
+
+    Ok(HttpResponse::Ok().json(rooms))
 }
 
 pub async fn add_event(
-    event: web::Json<NewEvent>,
+    event: web::Json<TimeRange>,
+    room: web::Path<String>,
     db_pool: web::Data<DbPool>,
     claims: ClaimsFromAuth,
 ) -> Result<HttpResponse, ServiceError> {
@@ -131,7 +144,7 @@ pub async fn add_event(
     // Get the general room capacity
     use crate::schema::rooms;
     let room: Option<Room> = rooms::dsl::rooms
-        .filter(rooms::dsl::id.eq(&event.room))
+        .filter(rooms::dsl::id.eq(room.as_ref()))
         .load(&conn)?
         .into_iter()
         .next();
@@ -141,10 +154,11 @@ pub async fn add_event(
         // Check the number of persons per partially overlapped full hour
         let mut t = start.clone();
         while t <= end {
+            let t_next = t + Duration::hours(1);
             let existing_count = dsl::occupancies
-                .filter(dsl::room.eq(&event.room))
-                .filter(dsl::start.ge(t.naive_utc()))
-                .filter(dsl::end.le((t + Duration::hours(1)).naive_utc()))
+                .filter(dsl::room.eq(&room.id))
+                .filter(dsl::start.le(t_next.naive_utc()))
+                .filter(dsl::end.ge(t.naive_utc()))
                 .load::<Occupancy>(&conn)?
                 .into_iter()
                 .count();
@@ -153,7 +167,7 @@ pub async fn add_event(
                 return Ok(HttpResponse::Forbidden().json("Room already full"));
             }
 
-            t = t + Duration::hours(1);
+            t = t_next;
         }
 
         // Check was successful, add the new event
@@ -164,10 +178,10 @@ pub async fn add_event(
             end: end.naive_utc(),
         };
         diesel::insert_into(crate::schema::occupancies::table)
-            .values(new_item)
+            .values(new_item.clone())
             .execute(&conn)?;
 
-        Ok(HttpResponse::Ok().finish())
+        Ok(HttpResponse::Ok().json(new_item))
     } else {
         Ok(HttpResponse::NotFound().json("Room not found"))
     }
