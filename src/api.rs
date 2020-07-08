@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
-use ldap3::{LdapConnAsync, Scope, SearchEntry};
+use ldap3::{LdapConnAsync};
 use sha2::Sha256;
 use std::env;
 
@@ -70,7 +70,12 @@ pub async fn login(
             }
         } else {
             // Query LDAP if the credentials are correct
-            let (_, mut ldap) = LdapConnAsync::new("ldaps://ldapmaster.cms.hu-berlin.de").await?;
+            let ldap_settings = ldap3::LdapConnSettings::new();
+            let (conn, mut ldap) =
+                LdapConnAsync::with_settings(ldap_settings, "ldaps://ldapmaster.cms.hu-berlin.de")
+                    .await?;
+
+            ldap3::drive!(conn);
 
             let result = ldap
                 .simple_bind(

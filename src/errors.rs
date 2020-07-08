@@ -94,13 +94,16 @@ impl From<dotenv::Error> for ServiceError {
     }
 }
 
-
 impl From<ldap3::result::LdapError> for ServiceError {
     fn from(e: ldap3::result::LdapError) -> Self {
-        ServiceError::InternalServerError(format!("{}", e))
+        match e {
+            ldap3::result::LdapError::OpSend { ref source } => {
+                ServiceError::InternalServerError(format!("{} (source: {})", e, source))
+            }
+            _ => ServiceError::InternalServerError(format!("{}", e)),
+        }
     }
 }
-
 
 impl From<jwt::Error> for ServiceError {
     fn from(orig: jwt::Error) -> Self {
