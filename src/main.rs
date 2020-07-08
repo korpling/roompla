@@ -23,6 +23,7 @@ use actix_web::{
 
 pub mod api;
 pub mod errors;
+pub mod extractors;
 pub mod models;
 pub mod schema;
 
@@ -92,7 +93,8 @@ async fn main() -> Result<()> {
             .service(
                 web::scope(&api_version)
                     .route("openapi.yml", web::get().to(get_api_spec))
-                    .route("/login", web::post().to(api::login)),
+                    .route("/login", web::post().to(api::login))
+                    .route("/add", web::post().to(api::add_event)),
             )
     })
     .bind(bind_address)?

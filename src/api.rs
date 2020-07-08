@@ -1,8 +1,12 @@
 use crate::errors::ServiceError;
-use crate::{models::User, DbPool};
+use crate::{
+    extractors::ClaimsFromAuth,
+    models::{NewOccupancy, Occupancy, Room, User},
+    DbPool,
+};
 use actix_web::{web, HttpResponse};
+use chrono::{DateTime, Duration, DurationRound};
 use diesel::prelude::*;
-use dotenv::dotenv;
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
 use ldap3::LdapConnAsync;
@@ -54,8 +58,6 @@ pub async fn login(
     login_data: web::Json<LoginData>,
     db_pool: web::Data<DbPool>,
 ) -> Result<HttpResponse, ServiceError> {
-    dotenv()?;
-
     // Get the corresponding user entry from the database
     use crate::schema::users::dsl::*;
     let conn = db_pool.get()?;
@@ -99,4 +101,74 @@ pub async fn login(
         }
     }
     Ok(HttpResponse::Unauthorized().finish())
+}
+
+#[derive(Deserialize)]
+pub struct NewEvent {
+    pub start: String,
+    pub end: String,
+    pub room: String,
+}
+
+pub async fn add_event(
+    event: web::Json<NewEvent>,
+    db_pool: web::Data<DbPool>,
+    claims: ClaimsFromAuth,
+) -> Result<HttpResponse, ServiceError> {
+    // Parse the dates and round them to the full hour
+    let start = DateTime::parse_from_rfc3339(&event.start)?.duration_round(Duration::hours(1))?;
+    let end = DateTime::parse_from_rfc3339(&event.end)?.duration_round(Duration::hours(1))?;
+
+    if end <= start {
+        return Ok(HttpResponse::Forbidden().json(format!(
+            "Begin of time range ({}) ist after end of range ({}).",
+            start, end
+        )));
+    }
+
+    let conn = db_pool.get()?;
+
+    // Get the general room capacity
+    use crate::schema::rooms;
+    let room: Option<Room> = rooms::dsl::rooms
+        .filter(rooms::dsl::id.eq(&event.room))
+        .load(&conn)?
+        .into_iter()
+        .next();
+
+    if let Some(room) = room {
+        use crate::schema::occupancies::dsl;
+        // Check the number of persons per partially overlapped full hour
+        let mut t = start.clone();
+        while t <= end {
+            let existing_count = dsl::occupancies
+                .filter(dsl::room.eq(&event.room))
+                .filter(dsl::start.ge(t.naive_utc()))
+                .filter(dsl::end.le((t + Duration::hours(1)).naive_utc()))
+                .load::<Occupancy>(&conn)?
+                .into_iter()
+                .count();
+
+            if existing_count as i32 >= room.max_occupancy {
+                return Ok(HttpResponse::Forbidden().json("Room already full"));
+            }
+
+            t = t + Duration::hours(1);
+        }
+
+        // Check was successful, add the new event
+        let new_item = NewOccupancy {
+            room: room.id,
+            user: claims.0.sub.to_string(),
+            start: start.naive_utc(),
+            end: end.naive_utc(),
+        };
+        diesel::insert_into(crate::schema::occupancies::table)
+            .values(new_item)
+            .execute(&conn)?;
+
+        Ok(HttpResponse::Ok().finish())
+    } else {
+        Ok(HttpResponse::NotFound().json("Room not found"))
+    }
 }

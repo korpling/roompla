@@ -1667,6 +1667,7 @@ dependencies = [
  "chrono",
  "diesel",
  "dotenv",
+ "futures",
  "hmac",
  "jwt",
  "ldap3",

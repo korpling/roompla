@@ -9,10 +9,10 @@ CREATE TABLE users (
     password_hash TEXT
 );
 
-CREATE TABLE presencies (
+CREATE TABLE occupancies (
     id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    "from" TIMESTAMP NOT NULL,
-    "to" TIMESTAMP NOT NULL,
+    "start" TIMESTAMP NOT NULL,
+    "end" TIMESTAMP NOT NULL,
     user TEXT NOT NULL REFERENCES user(id),
     room TEXT NOT NULL REFERENCES room(id)
 );

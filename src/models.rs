@@ -14,20 +14,20 @@ pub struct User {
 }
 
 #[derive(Insertable)]
-#[table_name = "presencies"]
-pub struct NewPresency {
-    pub from: NaiveDateTime,
-    pub to: NaiveDateTime,
+#[table_name = "occupancies"]
+pub struct NewOccupancy {
+    pub start: NaiveDateTime,
+    pub end: NaiveDateTime,
     pub user: String,
     pub room: String,
 }
 
-#[derive(QueryableByName)]
-#[table_name = "presencies"]
-pub struct Presency {
+#[derive(QueryableByName, Queryable)]
+#[table_name = "occupancies"]
+pub struct Occupancy {
     pub id: i32,
-    pub from: NaiveDateTime,
-    pub to: NaiveDateTime,
+    pub start: NaiveDateTime,
+    pub end: NaiveDateTime,
     pub user: String,
     pub room: String,
 }

@@ -82,12 +82,6 @@ impl From<std::num::ParseIntError> for ServiceError {
     }
 }
 
-impl From<InvalidKeyLength> for ServiceError {
-    fn from(_: InvalidKeyLength) -> Self {
-        ServiceError::BadRequest("Invalid JWT key length".to_owned())
-    }
-}
-
 impl From<dotenv::Error> for ServiceError {
     fn from(e: dotenv::Error) -> Self {
         ServiceError::InternalServerError(format!("{}", e))
@@ -105,8 +99,26 @@ impl From<ldap3::result::LdapError> for ServiceError {
     }
 }
 
+impl From<chrono::RoundingError> for ServiceError {
+    fn from(e: chrono::RoundingError) -> Self {
+        ServiceError::InternalServerError(format!("{}", e))
+    }
+}
+
 impl From<jwt::Error> for ServiceError {
     fn from(orig: jwt::Error) -> Self {
         ServiceError::InvalidJWTToken(format!("{}", orig))
+    }
+}
+
+impl From<InvalidKeyLength> for ServiceError {
+    fn from(_: InvalidKeyLength) -> Self {
+        ServiceError::BadRequest("Invalid JWT key length".to_owned())
+    }
+}
+
+impl From<chrono::format::ParseError> for ServiceError {
+    fn from(e: chrono::format::ParseError) -> Self {
+        ServiceError::BadRequest(format!("{}", e))
     }
 }

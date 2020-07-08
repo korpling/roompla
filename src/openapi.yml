@@ -10,14 +10,11 @@ servers:
 
 security:
   - bearerAuth: []
-  
+
 paths:
   /login:
       post:
         summary: Create JWT token for credentials of an account.
-        operationId: localLogin
-        tags:
-          - authentification
         requestBody:
           description: Object with the user ID and password to login with
           required: true
@@ -45,3 +42,55 @@ paths:
 
           "401":
             description: Unauthorized
+
+  /rooms/{room}/occupancies:
+    put:
+      summary: Add a new occupancy entry 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                start:
+                  type: string
+                  description: RFC 3339 formatted start time in UTC and truncated to hourly precision
+                end:
+                  type: string
+                  description: RFC 3339 formatted end time in UTC and truncated to hourly precision
+                room:
+                  type: string
+                  description: The ID of the room to register a presence in
+      responses:
+        default:
+          description: The new entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Occupancy"
+                
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Occupancy:
+      type: object
+      properties:
+        start:
+          type: string
+          description: RFC 3339 formatted start time in UTC and truncated to hourly precision
+        end:
+          type: string
+          description: RFC 3339 formatted end time in UTC and truncated to hourly precision
+        room:
+          type: string
+          description: The ID of the room that is occupied
+        user:
+          type: string
+          description: The ID of the user that occupies this room
