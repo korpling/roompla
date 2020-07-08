@@ -94,7 +94,14 @@ async fn main() -> Result<()> {
                 web::scope(&api_version)
                     .route("openapi.yml", web::get().to(get_api_spec))
                     .route("/login", web::post().to(api::login))
-                    .route("/rooms/{room}/occupancies", web::put().to(api::add_event))
+                    .route(
+                        "/rooms/{room}/occupancies",
+                        web::put().to(api::add_occupancy),
+                    )
+                    .route(
+                        "/rooms/{room}/occupancies",
+                        web::get().to(api::get_occupancies),
+                    )
                     .route("/rooms", web::get().to(api::all_rooms)),
             )
     })

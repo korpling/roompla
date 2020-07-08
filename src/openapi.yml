@@ -73,10 +73,10 @@ paths:
               properties:
                 start:
                   type: string
-                  description: RFC 3339 formatted start time in UTC and truncated to hourly precision
+                  description: RFC 3339 formatted start time and truncated to hourly precision
                 end:
                   type: string
-                  description: RFC 3339 formatted end time in UTC and truncated to hourly precision
+                  description: RFC 3339 formatted end time and truncated to hourly precision
       responses:
         default:
           description: The new entry
@@ -84,6 +84,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Occupancy"
+    get:
+      summary: Get all (possibly filtered) occupancies for the given room.
+      parameters:
+        - name: room
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: start
+          in: query
+          schema:
+            type: string
+          description: RFC 3339 formatted start time
+        - name: end
+          in: query
+          schema:
+            type: string
+          description: RFC 3339 formatted end time
+      responses:
+        default:
+          description: All matching occupancy entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Occupancy"
 
 components:
   securitySchemes:
@@ -98,11 +125,11 @@ components:
       properties:
         start:
           type: string
-          description: RFC 3339 formatted start time in UTC and truncated to hourly precision
+          description: RFC 3339 formatted start time and truncated to hourly precision
           example: 2020-07-08T13:00:00+02:00
         end:
           type: string
-          description: RFC 3339 formatted end time in UTC and truncated to hourly precision
+          description: RFC 3339 formatted end time and truncated to hourly precision
           example: 2020-07-08T17:00:00+02:00
         room:
           type: string

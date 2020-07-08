@@ -122,7 +122,7 @@ pub async fn all_rooms(
     Ok(HttpResponse::Ok().json(rooms))
 }
 
-pub async fn add_event(
+pub async fn add_occupancy(
     event: web::Json<TimeRange>,
     room: web::Path<String>,
     db_pool: web::Data<DbPool>,
@@ -184,6 +184,80 @@ pub async fn add_event(
             .execute(&conn)?;
 
         Ok(HttpResponse::Ok().json(new_item))
+    } else {
+        Ok(HttpResponse::NotFound().json("Room not found"))
+    }
+}
+
+#[derive(Deserialize, Clone)]
+pub struct RoomOccupancyParams {
+    pub start: Option<String>,
+    pub end: Option<String>,
+}
+
+pub async fn get_occupancies(
+    params: web::Query<RoomOccupancyParams>,
+    room: web::Path<String>,
+    db_pool: web::Data<DbPool>,
+    _claims: ClaimsFromAuth,
+) -> Result<HttpResponse, ServiceError> {
+    // Parse the dates and round them to the full hour
+    let start = if let Some(start) = &params.start {
+        Some(DateTime::parse_from_rfc3339(start)?.duration_round(Duration::hours(1))?)
+    } else {
+        None
+    };
+    let end = if let Some(end) = &params.end {
+        Some(DateTime::parse_from_rfc3339(end)?.duration_round(Duration::hours(1))?)
+    } else {
+        None
+    };
+
+    if let (Some(start), Some(end)) = (start, end) {
+        if end <= start {
+            return Ok(HttpResponse::Forbidden().json(format!(
+                "Begin of time range ({}) ist after end of range ({}).",
+                start, end
+            )));
+        }
+    }
+
+    let conn = db_pool.get()?;
+
+    // Get the general room capacity
+    use crate::schema::rooms;
+    let room: Option<Room> = rooms::dsl::rooms
+        .filter(rooms::dsl::id.eq(room.as_ref()))
+        .load(&conn)?
+        .into_iter()
+        .next();
+
+    if let Some(room) = room {
+        use crate::schema::occupancies::dsl;
+        // Get all occupancy events for the given range
+        let result = if let (Some(start), Some(end)) = (start, end) {
+            dsl::occupancies
+                .filter(dsl::room.eq(&room.id))
+                .filter(dsl::start.ge(start.naive_utc()))
+                .filter(dsl::end.le(end.naive_utc()))
+                .load::<Occupancy>(&conn)?
+        } else if let Some(start) = start {
+            dsl::occupancies
+                .filter(dsl::room.eq(&room.id))
+                .filter(dsl::start.ge(start.naive_utc()))
+                .load::<Occupancy>(&conn)?
+        } else if let Some(end) = end {
+            dsl::occupancies
+                .filter(dsl::room.eq(&room.id))
+                .filter(dsl::end.le(end.naive_utc()))
+                .load::<Occupancy>(&conn)?
+        } else {
+            dsl::occupancies
+                .filter(dsl::room.eq(&room.id))
+                .load::<Occupancy>(&conn)?
+        };
+
+        Ok(HttpResponse::Ok().json(result))
     } else {
         Ok(HttpResponse::NotFound().json("Room not found"))
     }
