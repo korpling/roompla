@@ -5,7 +5,7 @@ use diesel::prelude::*;
 use dotenv::dotenv;
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
-use ldap3::{LdapConnAsync};
+use ldap3::LdapConnAsync;
 use sha2::Sha256;
 use std::env;
 
@@ -29,7 +29,11 @@ fn create_signed_token(sub: &str) -> Result<String, ServiceError> {
     let now: chrono::DateTime<_> = chrono::Utc::now();
     let exp: i64 = now
         .checked_add_signed(chrono::Duration::minutes(
-            env::var("JWT_EXPIRATION")?.parse::<i64>()?,
+            env::var("JWT_EXPIRATION")
+                .ok()
+                .as_deref()
+                .unwrap_or("120")
+                .parse::<i64>()?,
         ))
         .ok_or_else(|| {
             ServiceError::InternalServerError(
