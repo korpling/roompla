@@ -1,29 +1,29 @@
 table! {
-    presency (id) {
-        id -> Nullable<Integer>,
-        datetime -> Text,
-        user -> Nullable<Text>,
+    presencies (id) {
+        id -> Integer,
+        from -> Text,
+        to -> Text,
+        user -> Text,
+        room -> Text,
     }
 }
 
 table! {
-    room (id) {
+    rooms (id) {
         id -> Text,
         max_occupancy -> Integer,
     }
 }
 
 table! {
-    user (id) {
+    users (id) {
         id -> Text,
         password_hash -> Nullable<Text>,
     }
 }
 
-joinable!(presency -> user (user));
-
 allow_tables_to_appear_in_same_query!(
-    presency,
-    room,
-    user,
+    presencies,
+    rooms,
+    users,
 );
