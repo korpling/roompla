@@ -7,5 +7,5 @@ Vue.use(Vuetify)
 
 const vuetify = new Vuetify();
 
-new Vue({ render: createElement => createElement(App), vuetify: vuetify }).$mount('#app');
+new Vue({ render: createElement => createElement(App), vuetify: vuetify}).$mount('#app');
 

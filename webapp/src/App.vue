@@ -1,31 +1,33 @@
 <template>
-<v-app>
+  <v-app>
     <v-main>
-        <v-container>
-            <v-col>
-                <v-row>
-                    <room-description room="3.333"></room-description>
-                </v-row>
-                 <v-row>
-                    <room-description room="3.408"></room-description>
-                </v-row>
-            </v-col>
-        </v-container>
+     <room-description v-for="r in rooms" :key="r.id" :room="r.id" />
     </v-main>
-</v-app>
+  </v-app>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
-import RoomDescription from './components/RoomDescription.vue';
+import RoomDescription from "./components/RoomDescription.vue";
 
 export default Vue.extend({
-  components: {
-    RoomDescription
+  components: { RoomDescription },
+  data() {
+    return {
+      rooms: [
+        {
+          id: "3.333",
+          max_occupancy: 2
+        },
+        {
+          id: "3.408",
+          max_occupancy: 1
+        }
+      ]
+    };
   }
 });
 </script>
 
 <style lang="scss" scoped>
-
 </style>
