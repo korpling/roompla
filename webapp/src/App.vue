@@ -14,6 +14,7 @@ export default Vue.extend({
   components: { RoomDescription },
   data() {
     return {
+      
       rooms: [
         {
           id: "3.333",

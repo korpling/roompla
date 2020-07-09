@@ -15,21 +15,16 @@ paths:
   /login:
     post:
       summary: Create JWT token for credentials of an account.
+      tags:
+        - roompla
       requestBody:
         description: Object with the user ID and password to login with
         required: true
         content:
           application/json:
             schema:
-              type: object
-              required:
-                - user_id
-                - password
-              properties:
-                user_id:
-                  type: string
-                password:
-                  type: string
+               $ref: "#/components/schemas/Credentials"
+
       responses:
         "200":
           description: Returns a JSON Web Token (JWT), valid until its expiration time is reached.
@@ -45,6 +40,8 @@ paths:
   /rooms:
     get:
       summary: Get all rooms in the system
+      tags:
+        - roompla
       responses:
         default:
           description: A list of rooms
@@ -58,6 +55,8 @@ paths:
   /rooms/{room}/occupancies:
     put:
       summary: Add a new occupancy entry
+      tags:
+        - roompla
       parameters:
         - name: room
           required: true
@@ -69,14 +68,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                start:
-                  type: string
-                  description: RFC 3339 formatted start time and truncated to hourly precision
-                end:
-                  type: string
-                  description: RFC 3339 formatted end time and truncated to hourly precision
+              $ref: "#/components/schemas/TimeRange"
       responses:
         default:
           description: The new entry
@@ -86,6 +78,8 @@ paths:
                 $ref: "#/components/schemas/Occupancy"
     get:
       summary: Get all (possibly filtered) occupancies for the given room.
+      tags:
+        - roompla
       parameters:
         - name: room
           required: true
@@ -138,6 +132,16 @@ components:
           type: string
           description: The ID of the user that occupies this room
 
+    TimeRange:
+      type: object
+      properties:
+        start:
+          type: string
+          description: RFC 3339 formatted start time and truncated to hourly precision
+        end:
+          type: string
+          description: RFC 3339 formatted end time and truncated to hourly precision
+
     Room:
       type: object
       properties:
@@ -149,3 +153,14 @@ components:
           type: integer
           description: Maximum number of occupants at the same time
           example: 2
+    
+    Credentials:
+      type: object
+      required:
+        - user_id
+        - password
+      properties:
+        user_id:
+          type: string
+        password:
+          type: string

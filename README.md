@@ -22,3 +22,12 @@ You can run the server with
 ./target/release/roompla
 ```
 
+### Regenerationg REST client code
+
+We use OpenAPI to describe the REST API. 
+The TypeScript code can be regenerated with the [OpenAPI generator](https://openapi-generator.tech/docs/installation).
+
+```bash
+java -jar openapi-generator-cli.jar generate -i src/openapi.yml -o webapp/src/ -g typescript-fetch
+
+```
