@@ -1,8 +1,8 @@
 {
-  "name": "webapp",
+  "name": "roompla",
   "version": "1.0.0",
   "main": "index.js",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "dependencies": {
     "vue": "^2.6.11",
     "vue-hot-reload-api": "^2.3.4",
@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@vue/component-compiler-utils": "^3.1.2",
+    "cssnano": "^4.1.10",
     "pug": "^3.0.0",
     "sass": "^1.26.10",
     "typescript": "^3.9.6",
