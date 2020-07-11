@@ -5,25 +5,29 @@
         {{ message.text }}
         <v-btn text @click="message.show = false">Close</v-btn>
       </v-snackbar>
-
-      <div v-if="api.configuration.accessToken">
-        <room-overview-link v-for="r in rooms" :key="r.id" :room="r.id" />
-      </div>
-      <login v-else @logged-in="login_callback" />
+      <v-container>
+        <div v-if="api.configuration.accessToken">
+          <div>
+            <room-overview-link v-for="r in rooms" :key="r.id" :room="r.id" />
+          </div>
+          <div>
+            <v-btn v-on:click="logout">Logout</v-btn>
+          </div>
+        </div>
+        <login v-else @logged-in="login_callback" />
+      </v-container>
     </v-main>
   </v-app>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
-import VueCookie from "vue-cookie";
 import RoomOverviewLink from "./components/RoomOverviewLink.vue";
 import Login from "./components/Login.vue";
 import { Room } from "./models/Room";
 import { RoomplaApi, LoginPostRequest } from "./apis/RoomplaApi";
 import { Configuration } from "./runtime";
 
-Vue.use(VueCookie);
 
 export default Vue.extend({
   components: { RoomOverviewLink, Login },
@@ -52,9 +56,12 @@ export default Vue.extend({
         // Since we are now authentifcated, we can fetch the rooms
         this.fetch_rooms();
       } else {
-        this.api = new RoomplaApi();
-        this.rooms = [];
+        this.logout();
       }
+    },
+    logout: function() {
+      this.api = new RoomplaApi();
+      this.rooms = [];
     },
     fetch_rooms: function() {
       this.api.roomsGet().then(
