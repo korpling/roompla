@@ -63,6 +63,7 @@ import VueCookie from "vue-cookie";
 import RoomOverviewLink from "./components/RoomOverviewLink.vue";
 import { Room } from "./models/Room";
 import { RoomplaApi, LoginPostRequest } from "./apis/RoomplaApi";
+import { Configuration } from "./runtime";
 
 Vue.use(VueCookie);
 
@@ -92,14 +93,16 @@ export default Vue.extend({
     };
   },
   created: function() {
-    this.api_config.accessToken = this.$cookie.get("JWT_TOKEN");
   },
   mounted: function() {
-     this.fetch_rooms();
+    if (this.api_config.accessToken) {
+      this.fetch_rooms();
+    }
   },
   methods: {
     fetch_rooms: function() {
-      let api = new RoomplaApi(this.api_config);
+      let config = new Configuration(this.api_config);
+      let api = new RoomplaApi(config);
       api.roomsGet().then(
         response => (this.rooms = response),
         reason => {
@@ -114,9 +117,6 @@ export default Vue.extend({
       result.then(
         response => {
           this.api_config.accessToken = response;
-
-          // Save this token for later re-use as a cookie
-          this.$cookie.set("JWT_TOKEN", this.api_config.accessToken);
 
           this.credentials.password = null;
           this.message.show = false;
