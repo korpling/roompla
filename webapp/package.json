@@ -5,6 +5,7 @@
   "license": "Apache-2.0",
   "dependencies": {
     "vue": "^2.6.11",
+    "vue-cookie": "^1.1.4",
     "vue-hot-reload-api": "^2.3.4",
     "vuetify": "^2.3.4"
   },

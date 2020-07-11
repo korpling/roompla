@@ -8,5 +8,6 @@
       "module": "es2015",
       "moduleResolution": "node",
       "rootDir": "src",
+      "lib": ["ES2015", "DOM"]
     }
   }

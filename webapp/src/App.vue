@@ -5,7 +5,7 @@
         {{ message.text }}
         <v-btn color="pink" text @click="message.show = false">Close</v-btn>
       </v-snackbar>
-      <div v-if="api.configuration.accessToken">
+      <div v-if="api_config.accessToken">
         <room-overview-link v-for="r in rooms" :key="r.id" :room="r.id" />
       </div>
       <v-container v-else class="fill-height" fluid>
@@ -59,15 +59,18 @@
 
 <script lang="ts">
 import Vue from "vue";
+import VueCookie from "vue-cookie";
 import RoomOverviewLink from "./components/RoomOverviewLink.vue";
 import { Room } from "./models/Room";
 import { RoomplaApi, LoginPostRequest } from "./apis/RoomplaApi";
+
+Vue.use(VueCookie);
 
 export default Vue.extend({
   components: { RoomOverviewLink },
   data() {
     return {
-      api: new RoomplaApi(),
+      api_config: { accessToken: null },
       credentials: {
         userId: "",
         password: null
@@ -88,21 +91,45 @@ export default Vue.extend({
       ]
     };
   },
+  created: function() {
+    this.api_config.accessToken = this.$cookie.get("JWT_TOKEN");
+  },
+  mounted: function() {
+     this.fetch_rooms();
+  },
   methods: {
+    fetch_rooms: function() {
+      let api = new RoomplaApi(this.api_config);
+      api.roomsGet().then(
+        response => (this.rooms = response),
+        reason => {
+          this.message.text = "Could not fetch rooms: " + reason;
+          this.message.show = true;
+        }
+      );
+    },
     attempt_login: function(event) {
       let api = new RoomplaApi();
       let result = api.loginPost({ credentials: this.credentials });
-      result
-        .then(response => {
-          this.api.configuration = {accessToken: response};
+      result.then(
+        response => {
+          this.api_config.accessToken = response;
+
+          // Save this token for later re-use as a cookie
+          this.$cookie.set("JWT_TOKEN", this.api_config.accessToken);
+
           this.credentials.password = null;
           this.message.show = false;
-          this.message.text = "Logged in"
-        }, reason => {
+
+          // Fetch all rooms from the service, now with authentification
+          this.fetch_rooms();
+        },
+        reason => {
           this.message.text = "Login failed: " + reason.statusText;
           this.message.show = true;
           this.credentials.password = null;
-        });
+        }
+      );
     }
   }
 });

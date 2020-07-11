@@ -4,12 +4,6 @@
     // Weitere Informationen finden Sie unter https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
-    {
-        "type": "lldb",
-        "request": "attach",
-        "name": "Attach",
-        "program": "${workspaceFolder}/target/debug/roompla"
-    },
         {
             "type": "lldb",
             "request": "launch",
@@ -46,6 +40,26 @@
             },
             "args": [],
             "cwd": "${workspaceFolder}"
+        },
+        {
+            "name": "Attach to Firefox",
+            "type": "firefox",
+            "request": "attach",
+            "url": "http://localhost:1234/",
+            "pathMappings": [
+                {
+                    "url": "http://localhost:1234/src/runtime.ts",
+                    "path": "${workspaceFolder}/webapp/src/runtime.ts"
+                },
+                {
+                    "url": "http://localhost:1234/src/apis",
+                    "path": "${workspaceFolder}/webapp/src/apis"
+                },
+                {
+                    "url": "http://localhost:1234/src/App.vue",
+                    "path": "${workspaceFolder}/webapp/src/App.vue"
+                }
+            ]
         }
     ]
 }
