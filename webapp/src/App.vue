@@ -1,14 +1,11 @@
 <template>
   <v-app>
     <v-main>
-      <v-snackbar
-        v-model="message.show"
-        top = true
-      >
+      <v-snackbar v-model="message.show" :top="true">
         {{ message.text }}
-        <v-btn color="pink" flat @click="message.show = false">Close</v-btn>
+        <v-btn color="pink" text @click="message.show = false">Close</v-btn>
       </v-snackbar>
-      <div v-if="user.jwt_token">
+      <div v-if="api.configuration.accessToken">
         <room-overview-link v-for="r in rooms" :key="r.id" :room="r.id" />
       </div>
       <v-container v-else class="fill-height" fluid>
@@ -34,7 +31,7 @@
                     name="login"
                     prepend-icon="mdi-account"
                     type="text"
-                    v-model="user.id"
+                    v-model="credentials.userId"
                   ></v-text-field>
 
                   <v-text-field
@@ -43,7 +40,8 @@
                     name="password"
                     prepend-icon="mdi-lock"
                     type="password"
-                    v-model="user.provided_password"
+                    v-model="credentials.password"
+                    v-on:keyup.enter="attempt_login"
                   ></v-text-field>
                 </v-form>
               </v-card-text>
@@ -62,21 +60,21 @@
 <script lang="ts">
 import Vue from "vue";
 import RoomOverviewLink from "./components/RoomOverviewLink.vue";
-import {Room} from "./models/Room";
-import {RoomplaApi, LoginPostRequest} from "./apis/RoomplaApi";
+import { Room } from "./models/Room";
+import { RoomplaApi, LoginPostRequest } from "./apis/RoomplaApi";
 
 export default Vue.extend({
   components: { RoomOverviewLink },
   data() {
     return {
-      user: {
-        id: null,
-        provided_password: null,
-        jwt_token: null,
+      api: new RoomplaApi(),
+      credentials: {
+        userId: "",
+        password: null
       },
       message: {
         show: false,
-        text: "",
+        text: ""
       },
       rooms: [
         {
@@ -91,25 +89,20 @@ export default Vue.extend({
     };
   },
   methods: {
-    attempt_login: function (event) {
+    attempt_login: function(event) {
       let api = new RoomplaApi();
-      let request = {
-        credentials: {
-          userId: this.user.id,
-          password: this.user.provided_password,
-        }
-      };
-      let result = api.loginPost(request);
-      result.then(
-        (response) => {
-          this.user.jwt_token = response; 
-        }
-      ).catch(
-        (response) => {
-          this.message.text = "Login failed: " + response.statusText;
+      let result = api.loginPost({ credentials: this.credentials });
+      result
+        .then(response => {
+          this.api.configuration = {accessToken: response};
+          this.credentials.password = null;
+          this.message.show = false;
+          this.message.text = "Logged in"
+        }, reason => {
+          this.message.text = "Login failed: " + reason.statusText;
           this.message.show = true;
-          }
-      );
+          this.credentials.password = null;
+        });
     }
   }
 });
