@@ -70,7 +70,7 @@ export default Vue.extend({
         response => {
           this.message.show = false;
 
-          this.$emit("logged-in", response);
+          this.$emit("logged-in", response, this.credentials.userId);
         },
         reason => {
           this.message.text = "Login failed: " + reason.statusText;

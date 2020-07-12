@@ -1,10 +1,10 @@
 <template>
   <v-app>
     <v-main>
-      <v-container fluid v-if="loggedIn">
+      <v-container fluid v-if="userId">
         <router-view></router-view>
         <v-footer>
-          <v-btn v-on:click="logout">{{$t("logout")}}</v-btn>
+          <v-btn v-on:click="logout">{{$t("logout", {msg: userId})}}</v-btn>
         </v-footer>
       </v-container>
       <login v-else @logged-in="login_callback" />
@@ -40,19 +40,19 @@ export default Vue.extend({
   components: { Login, RoomList, RoomView },
   data() {
     return {
-      loggedIn: false,
+      userId: null,
     };
   },
   created: function() {},
   methods: {
-    login_callback: function(token) {
-      store.login(token);
-      this.loggedIn = true;
+    login_callback: function(token, userId) {
+      store.login(token, userId);
+      this.userId = userId;
       
     },
     logout: function() {
       store.logout();
-      this.loggedIn = false;
+      this.userId = null;
     },
   }
 });

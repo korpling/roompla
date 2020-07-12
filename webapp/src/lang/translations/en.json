@@ -1,5 +1,5 @@
 {
-    "logout": "Logout",
+    "logout": "Logout {msg}",
     "user-name": "User Name",
     "password": "Password",
     "login": "Login",
