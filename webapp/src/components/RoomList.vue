@@ -5,7 +5,7 @@
         <v-card-title>{{r.id}}</v-card-title>
         <v-card-text>{{$tc("people-allowed", r.maxOccupancy, {count: r.maxOccupancy})}}</v-card-text>
         <v-card-actions>
-           <router-link :to="'/room/' + r.id">{{$t("book-time-slot")}}</router-link>
+           <router-link :to="'/room/' + r.id + '?tz=' + r.timezone">{{$t("book-time-slot")}}</router-link>
         </v-card-actions>
       </v-card>
     </div>

@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <v-toolbar color="primary" dark flat>
-      <v-toolbar-title>{{$t("room-name", {msg: room_id}) }}</v-toolbar-title>
+      <v-toolbar-title>{{$t("room-name", {msg: id}) }}</v-toolbar-title>
       <v-toolbar-items>
         <v-btn icon class="hidden-xs-only">
           <v-icon>mdi-arrow-left</v-icon>
@@ -35,9 +35,9 @@ import { store } from "../store";
 import moment from "moment-timezone";
 
 export default Vue.extend({
+  props: ["id", "timezone"],
   data() {
     return {
-      room: null,
       events: [],
       day_range: { start: 7, count: 13 },
       day_ranges: [
@@ -46,19 +46,19 @@ export default Vue.extend({
       ]
     };
   },
-  created() {
-    this.room_id = this.$route.params.id;
-  },
   methods: {
     getEvents({ start, end }) {
       const events = [];
       store.state.api
-        .roomsRoomOccupanciesGet({ room: this.room_id })
+        .roomsRoomOccupanciesGet({ room: this.id })
         .then(result => {
+          if(this.timezone == null) {
+            this.timezone = "UTC";
+          }
           for (var o of result) {
             // Transform from UTC to local time
-            const start = moment.utc(o.start).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
-            const end = moment.utc(o.end).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
+            const start = moment.utc(o.start).tz(this.timezone).format('YYYY-MM-DD HH:mm:ss');;
+            const end = moment.utc(o.end).tz(this.timezone).format('YYYY-MM-DD HH:mm:ss');;
             events.push({
               name: o.userId,
               start,

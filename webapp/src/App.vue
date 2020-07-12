@@ -30,7 +30,7 @@ Vue.use(VueRouter);
 const router = new VueRouter({
   routes: [
     { path: "/", component: RoomList },
-    { path: "/room/:id", component: RoomView }
+    { path: "/room/:id", component: RoomView, props: (route) => ({ id: route.params.id, timezone: route.query.tz }) }
   ]
 });
 
