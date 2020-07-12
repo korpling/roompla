@@ -181,6 +181,7 @@ export default Vue.extend({
                 "\n" +
                 bodyText;
               this.snackbar = true;
+              this.getEvents(this.day_range.start, this.day_range.start + this.day_range.count);
             });
           }
         );
