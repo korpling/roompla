@@ -57,12 +57,12 @@ export default Vue.extend({
         .then(result => {
           for (var o of result) {
             // Transform from UTC to local time
-            const start = moment.utc(o.start);
-            const end = moment.utc(o.end);
+            const start = moment.utc(o.start).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
+            const end = moment.utc(o.end).tz("Europe/Berlin").format('YYYY-MM-DD HH:mm:ss');;
             events.push({
               name: o.userId,
-              start: start.toISOString(true),
-              end: end.toISOString(true),
+              start,
+              end,
               timed: true
             });
           }
