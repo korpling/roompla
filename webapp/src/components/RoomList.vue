@@ -5,7 +5,7 @@
         <v-card-title>{{r.id}}</v-card-title>
         <v-card-text>{{$tc("people-allowed", r.maxOccupancy, {count: r.maxOccupancy})}}</v-card-text>
         <v-card-actions>
-          <v-btn v-on:click="open_room($event, r)">{{$t("book-time-slot")}}</v-btn>
+           <router-link :to="'/room/' + r.id">{{$t("book-time-slot")}}</router-link>
         </v-card-actions>
       </v-card>
     </div>
@@ -16,12 +16,12 @@
 import Vue from "vue";
 import { Configuration } from "../runtime";
 import { RoomplaApi } from "../apis/RoomplaApi";
+import {store} from "../store";
 
 export default Vue.extend({
   data() {
     return { rooms: [] };
   },
-  props: ["api"],
   created() {
     this.fetch_rooms();
   },
@@ -30,16 +30,13 @@ export default Vue.extend({
   },
   methods: {
     fetch_rooms: function() {
-      this.api.roomsGet().then(
+      store.state.api.roomsGet().then(
         response => (this.rooms = response),
         reason => {
           this.message.text = "Could not fetch rooms: " + reason;
           this.message.show = true;
         }
       );
-    },
-    open_room: function(event, room) {
-      this.$emit("room-selected", room);
     }
   }
 });

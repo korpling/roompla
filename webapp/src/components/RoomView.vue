@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <v-toolbar color="primary" dark flat>
-      <v-toolbar-title>{{$t("room-name", {msg: room.id}) }}</v-toolbar-title>
+      <v-toolbar-title>{{$t("room-name", {msg: room_id}) }}</v-toolbar-title>
       <v-toolbar-items>
         <v-select
           v-model="day_range"
@@ -30,9 +30,9 @@ import Vue from "vue";
 import {i18n} from "../lang/";
 
 export default Vue.extend({
-  props: ["room"],
   data() {
     return {
+      room: null,
       events: [],
       day_range: { start: 7, count: 13 },
       day_ranges: [
@@ -40,6 +40,9 @@ export default Vue.extend({
         { text: i18n.t("whole-day"), value: { start: 0, count: 24 } }
       ]
     };
+  },
+  created() {
+    this.room_id =  this.$route.params.id;
   },
   methods: {
     getEvents({ start, end }) {

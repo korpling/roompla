@@ -1,23 +1,11 @@
 <template>
   <v-app>
     <v-main>
-      <v-container fluid v-if="api.configuration.accessToken">
-        <v-row align="center" justify="center">
-          <v-col cols="2">
-            <v-btn v-if="room" v-on:click="room = null">{{$t("room-list")}}</v-btn>
-          </v-col>
-          <v-col cols="2">
-            <v-btn v-on:click="logout">{{$t('logout')}}</v-btn>
-          </v-col>
-        </v-row>
-        <div v-if="room">
-          <v-row>
-            <room-view :room="room"></room-view>
-          </v-row>
-        </div>
-        <v-row v-else>
-          <room-list :api="api" @room-selected="room_selected_callback"></room-list>
-        </v-row>
+      <v-container fluid v-if="loggedIn">
+        <router-view></router-view>
+        <v-footer>
+          <v-btn v-on:click="logout">{{$t("logout")}}</v-btn>
+        </v-footer>
       </v-container>
       <login v-else @logged-in="login_callback" />
     </v-main>
@@ -32,43 +20,40 @@ import Login from "./components/Login.vue";
 import RoomView from "./components/RoomView.vue";
 import RoomList from "./components/RoomList.vue";
 import { Room } from "./models/Room";
-import { RoomplaApi, LoginPostRequest } from "./apis/RoomplaApi";
 import { Configuration } from "./runtime";
-import {i18n} from "./lang";
+import { i18n } from "./lang";
+
+import { store } from "./store";
 
 Vue.use(VueRouter);
 
+const router = new VueRouter({
+  routes: [
+    { path: "/", component: RoomList },
+    { path: "/room/:id", component: RoomView }
+  ]
+});
+
 export default Vue.extend({
   i18n,
+  router,
   components: { Login, RoomList, RoomView },
   data() {
     return {
-      api: new RoomplaApi(),
-      userId: null,
-      message: {
-        show: false,
-        text: ""
-      },
-      room: null
+      loggedIn: false,
     };
   },
   created: function() {},
   methods: {
     login_callback: function(token) {
-      // Recreate the internal API
-      if (token) {
-        this.api = new RoomplaApi(new Configuration({ accessToken: token }));
-      } else {
-        this.api = new RoomplaApi();
-      }
+      store.login(token);
+      this.loggedIn = true;
+      
     },
     logout: function() {
-      this.api = new RoomplaApi();
-      this.rooms = [];
+      store.logout();
+      this.loggedIn = false;
     },
-    room_selected_callback: function(room) {
-      this.room = room;
-    }
   }
 });
 </script>
