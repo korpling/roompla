@@ -1,5 +1,5 @@
 <template>
-  <v-container>
+  <v-container fluid>
     <div v-for="r in rooms" :key="r.id">
       <v-card>
         <v-card-title>{{r.id}}</v-card-title>

@@ -1,22 +1,24 @@
 <template>
   <v-app>
     <v-main>
-      <div v-if="api.configuration.accessToken">
-        <v-container fluid>
-          <div v-if="room">
-            <v-row><v-btn v-on:click="room = null">Back</v-btn></v-row>
-            <v-row>
-              <room-view :room="room"></room-view>
-            </v-row>
-          </div>
-          <v-row v-else>
-            <room-list :api="api" @room-selected="room_selected_callback"></room-list>
-          </v-row>
+      <v-container fluid v-if="api.configuration.accessToken">
+        <div v-if="room">
           <v-row>
-            <v-btn v-on:click="logout">Logout</v-btn>
+            <room-view :room="room"></room-view>
           </v-row>
-        </v-container>
-      </div>
+        </div>
+        <v-row v-else>
+          <room-list :api="api" @room-selected="room_selected_callback"></room-list>
+        </v-row>
+        <v-row align="center" justify="center">
+          <v-col cols=2>
+            <v-btn v-if="room" v-on:click="room = null">Room list</v-btn>
+          </v-col>
+          <v-col cols=2>
+            <v-btn v-on:click="logout">Logout</v-btn>
+          </v-col>
+        </v-row>
+      </v-container>
       <login v-else @logged-in="login_callback" />
     </v-main>
   </v-app>
