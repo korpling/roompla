@@ -104,9 +104,9 @@ export default Vue.extend({
       if (event.occupancy == null) {
         return "grey";
       } else if (event.occupancy.userId === store.state.userId) {
-        return "blue";
-      } else {
         return "red";
+      } else {
+        return "blue";
       }
     },
     startDrag({ event, timed }) {
