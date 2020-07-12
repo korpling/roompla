@@ -31,6 +31,12 @@ export interface Room {
      * @memberof Room
      */
     maxOccupancy?: number;
+    /**
+     * The timezone of the room
+     * @type {string}
+     * @memberof Room
+     */
+    timezone?: string;
 }
 
 export function RoomFromJSON(json: any): Room {
@@ -45,6 +51,7 @@ export function RoomFromJSONTyped(json: any, ignoreDiscriminator: boolean): Room
         
         'id': !exists(json, 'id') ? undefined : json['id'],
         'maxOccupancy': !exists(json, 'max_occupancy') ? undefined : json['max_occupancy'],
+        'timezone': !exists(json, 'timezone') ? undefined : json['timezone'],
     };
 }
 
@@ -59,6 +66,7 @@ export function RoomToJSON(value?: Room | null): any {
         
         'id': value.id,
         'max_occupancy': value.maxOccupancy,
+        'timezone': value.timezone,
     };
 }
 

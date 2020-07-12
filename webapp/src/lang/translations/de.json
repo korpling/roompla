@@ -1,8 +1,8 @@
 {
-    "logout": "Ausloggen",
+    "logout": "Abmelden",
     "user-name": "Nutzername",
     "password": "Passwort",
-    "login": "Einloggen",
+    "login": "Anmelden",
     "room-name": "Raum {msg}",
     "room-list": "Raumliste",
     "people-allowed": "1 Person erlaubt | {count} Personen erlaubt",

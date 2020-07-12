@@ -3,6 +3,9 @@
     <v-toolbar color="primary" dark flat>
       <v-toolbar-title>{{$t("room-name", {msg: room_id}) }}</v-toolbar-title>
       <v-toolbar-items>
+        <v-btn icon class="hidden-xs-only">
+          <v-icon>mdi-arrow-left</v-icon>
+        </v-btn>
         <v-select
           v-model="day_range"
           :items="day_ranges"
@@ -27,7 +30,9 @@
 
 <script lang="ts">
 import Vue from "vue";
-import {i18n} from "../lang/";
+import { i18n } from "../lang/";
+import { store } from "../store";
+import moment from "moment-timezone";
 
 export default Vue.extend({
   data() {
@@ -42,18 +47,27 @@ export default Vue.extend({
     };
   },
   created() {
-    this.room_id =  this.$route.params.id;
+    this.room_id = this.$route.params.id;
   },
   methods: {
     getEvents({ start, end }) {
       const events = [];
-
-      events.push({
-        name: "Test event",
-        start: `${start.date}T09:00:00`,
-        end: `${start.date}T14:00:00`,
-        timed: true
-      });
+      store.state.api
+        .roomsRoomOccupanciesGet({ room: this.room_id })
+        .then(result => {
+          for (var o of result) {
+            // Transform from UTC to local time
+            const start = moment.utc(o.start);
+            const end = moment.utc(o.end);
+            events.push({
+              name: o.userId,
+              start: start.toISOString(true),
+              end: end.toISOString(true),
+              timed: true
+            });
+          }
+          this.events = events;
+        });
 
       this.events = events;
     }

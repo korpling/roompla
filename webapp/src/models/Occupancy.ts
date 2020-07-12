@@ -42,7 +42,19 @@ export interface Occupancy {
      * @type {string}
      * @memberof Occupancy
      */
-    user?: string;
+    userId?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Occupancy
+     */
+    userName?: string;
+    /**
+     * 
+     * @type {string}
+     * @memberof Occupancy
+     */
+    userContact?: string;
 }
 
 export function OccupancyFromJSON(json: any): Occupancy {
@@ -58,7 +70,9 @@ export function OccupancyFromJSONTyped(json: any, ignoreDiscriminator: boolean):
         'start': !exists(json, 'start') ? undefined : json['start'],
         'end': !exists(json, 'end') ? undefined : json['end'],
         'room': !exists(json, 'room') ? undefined : json['room'],
-        'user': !exists(json, 'user') ? undefined : json['user'],
+        'userId': !exists(json, 'user_id') ? undefined : json['user_id'],
+        'userName': !exists(json, 'user_name') ? undefined : json['user_name'],
+        'userContact': !exists(json, 'user_contact') ? undefined : json['user_contact'],
     };
 }
 
@@ -74,7 +88,9 @@ export function OccupancyToJSON(value?: Occupancy | null): any {
         'start': value.start,
         'end': value.end,
         'room': value.room,
-        'user': value.user,
+        'user_id': value.userId,
+        'user_name': value.userName,
+        'user_contact': value.userContact,
     };
 }
 

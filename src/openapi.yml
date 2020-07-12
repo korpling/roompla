@@ -128,9 +128,13 @@ components:
         room:
           type: string
           description: The ID of the room that is occupied
-        user:
+        user_id:
           type: string
           description: The ID of the user that occupies this room
+        user_name:
+          type: string
+        user_contact:
+          type: string
 
     TimeRange:
       type: object
@@ -153,6 +157,9 @@ components:
           type: integer
           description: Maximum number of occupants at the same time
           example: 2
+        timezone:
+          type: string
+          description: The timezone of the room
     
     Credentials:
       type: object
