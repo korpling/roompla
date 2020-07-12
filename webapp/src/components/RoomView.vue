@@ -169,17 +169,13 @@ export default Vue.extend({
         })
         .then(
           result => {
-            this.message_text = "Added event";
+            this.message_text = i18n.t("added-entry");
             this.snackbar = true;
             this.getEvents(this.day_range.start, this.day_range.start + this.day_range.count);
           },
           failure => {
             failure.text().then(bodyText => {
-              this.message_text =
-                "Could not add event: " +
-                failure.statusText +
-                "\n" +
-                bodyText;
+              this.message_text = i18n.t("error-adding", [bodyText]);
               this.snackbar = true;
               this.getEvents(this.day_range.start, this.day_range.start + this.day_range.count);
             });

@@ -9,5 +9,7 @@
     "book-time-slot": "Book time slot",
     "hours-selection": "Hours",
     "working-hours": "Working Hours",
-    "whole-day": "Whole Day"
+    "whole-day": "Whole Day",
+    "added-entry": "Added entry",
+    "error-adding": "Could not add entry: {0}"
 }

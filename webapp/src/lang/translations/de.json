@@ -9,5 +9,7 @@
     "book-time-slot": "Arbeitszeit eintragen",
     "hours-selection": "Stundenanzeige",
     "working-hours": "Arbeitstag",
-    "whole-day": "Ganzer Tag"
+    "whole-day": "Ganzer Tag",
+    "added-entry": "Eintrag hinzugefügt",
+    "error-adding": "Fehler beim Hinzufügen des Eintrags: {0}"
 }
