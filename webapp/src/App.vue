@@ -2,6 +2,14 @@
   <v-app>
     <v-main>
       <v-container fluid v-if="api.configuration.accessToken">
+        <v-row align="center" justify="center">
+          <v-col cols="2">
+            <v-btn v-if="room" v-on:click="room = null">Room list</v-btn>
+          </v-col>
+          <v-col cols="2">
+            <v-btn v-on:click="logout">Logout</v-btn>
+          </v-col>
+        </v-row>
         <div v-if="room">
           <v-row>
             <room-view :room="room"></room-view>
@@ -9,14 +17,6 @@
         </div>
         <v-row v-else>
           <room-list :api="api" @room-selected="room_selected_callback"></room-list>
-        </v-row>
-        <v-row align="center" justify="center">
-          <v-col cols=2>
-            <v-btn v-if="room" v-on:click="room = null">Room list</v-btn>
-          </v-col>
-          <v-col cols=2>
-            <v-btn v-on:click="logout">Logout</v-btn>
-          </v-col>
         </v-row>
       </v-container>
       <login v-else @logged-in="login_callback" />
