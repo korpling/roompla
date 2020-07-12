@@ -23,6 +23,7 @@
       :events="events"
       :first-interval="day_range.start"
       :interval-count="day_range.count"
+      :locale="locale"
       @change="getEvents"
     ></v-calendar>
   </v-container>
@@ -38,6 +39,7 @@ export default Vue.extend({
   props: ["id", "timezone"],
   data() {
     return {
+      locale: i18n.locale,
       events: [],
       day_range: { start: 7, count: 13 },
       day_ranges: [
