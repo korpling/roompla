@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <v-snackbar v-model="snackbar" multiline="true">{{message_text}}</v-snackbar>
+    <v-snackbar v-model="snackbar" top=true multiline="true">{{message_text}}</v-snackbar>
 
     <v-toolbar color="primary" dark flat>
       <v-toolbar-title>{{$t("room-name", {msg: id}) }}</v-toolbar-title>
@@ -171,6 +171,7 @@ export default Vue.extend({
           result => {
             this.message_text = "Added event";
             this.snackbar = true;
+            this.getEvents(this.day_range.start, this.day_range.start + this.day_range.count);
           },
           failure => {
             failure.text().then(bodyText => {
