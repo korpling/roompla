@@ -1,5 +1,7 @@
 <template>
   <v-container fluid>
+    <v-snackbar v-model="snackbar" multiline="true">{{message_text}}</v-snackbar>
+
     <v-toolbar color="primary" dark flat>
       <v-toolbar-title>{{$t("room-name", {msg: id}) }}</v-toolbar-title>
       <v-toolbar-items>
@@ -52,6 +54,8 @@ export default Vue.extend({
     return {
       locale: i18n.locale,
       events: [],
+      snackbar: false,
+      message_text: "",
       day_range: { start: 7, count: 13 },
       day_ranges: [
         { text: i18n.t("working-hours"), value: { start: 7, count: 13 } },
@@ -92,7 +96,9 @@ export default Vue.extend({
       this.events = events;
     },
     getEventColor(event) {
-      if (event.occupancy.userId === store.state.userId) {
+      if (event.occupancy == null) {
+        return "grey";
+      } else if (event.occupancy.userId === store.state.userId) {
         return "blue";
       } else {
         return "red";
@@ -116,7 +122,6 @@ export default Vue.extend({
         this.createStart = this.roundTime(mouse);
         this.createEvent = {
           name: `Event #${this.events.length}`,
-          color: "blue",
           start: this.createStart,
           end: this.createStart,
           timed: true
@@ -153,6 +158,32 @@ export default Vue.extend({
       }
     },
     endDrag() {
+      // submit event to rest API
+      store.state.api
+        .roomsRoomOccupanciesPut({
+          room: this.id,
+          timeRange: {
+            start: moment.utc(this.createEvent.start).toISOString(),
+            end: moment.utc(this.createEvent.end).toISOString()
+          }
+        })
+        .then(
+          result => {
+            this.message_text = "Added event";
+            this.snackbar = true;
+          },
+          failure => {
+            failure.text().then(bodyText => {
+              this.message_text =
+                "Could not add event: " +
+                failure.statusText +
+                "\n" +
+                bodyText;
+              this.snackbar = true;
+            });
+          }
+        );
+
       this.dragTime = null;
       this.dragEvent = null;
       this.createEvent = null;
@@ -177,7 +208,7 @@ export default Vue.extend({
       this.dragEvent = null;
     },
     roundTime(time, down = true) {
-      const roundTo = 15; // minutes
+      const roundTo = 60; // minutes
       const roundDownTime = roundTo * 60 * 1000;
 
       return down
