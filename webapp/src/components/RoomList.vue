@@ -3,7 +3,7 @@
     <div v-for="r in rooms" :key="r.id">
       <v-card>
         <v-card-title>{{r.id}}</v-card-title>
-        <v-card-text>{{$t("people-allowed", {msg: r.maxOccupancy})}}</v-card-text>
+        <v-card-text>{{$tc("people-allowed", r.maxOccupancy, {count: r.maxOccupancy})}}</v-card-text>
         <v-card-actions>
           <v-btn v-on:click="open_room($event, r)">{{$t("book-time-slot")}}</v-btn>
         </v-card-actions>

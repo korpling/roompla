@@ -5,7 +5,7 @@
     "login": "Einloggen",
     "room-name": "Raum {msg}",
     "room-list": "Raumliste",
-    "people-allowed": "{msg} Personen erlaubt",
+    "people-allowed": "1 Person erlaubt | {count} Personen erlaubt",
     "book-time-slot": "Arbeitszeit eintragen",
     "hours-selection": "Stundenanzeige",
     "working-hours": "Arbeitstag",
