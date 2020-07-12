@@ -9,13 +9,15 @@ use chrono::{DateTime, Duration, DurationRound};
 use diesel::prelude::*;
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
-use ldap3::LdapConnAsync;
+use ldap3::{LdapConnAsync, Scope, SearchEntry};
 use sha2::Sha256;
 use std::env;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
     pub sub: String,
+    pub name: String,
+    pub contact_info: String,
     /// Expiration date as unix timestamp in seconds since epoch and UTC
     pub exp: Option<i64>,
 }
@@ -26,7 +28,7 @@ pub struct LoginData {
     pub password: String,
 }
 
-fn create_signed_token(sub: &str) -> Result<String, ServiceError> {
+fn create_signed_token(sub: &str, name: &str, contact_info: &str) -> Result<String, ServiceError> {
     // Create the JWT token
     let key: Hmac<Sha256> = Hmac::new_varkey(env::var("JWT_SECRET")?.as_bytes())?;
     // Determine an expiration date based on the configuration
@@ -48,6 +50,8 @@ fn create_signed_token(sub: &str) -> Result<String, ServiceError> {
     let claims = Claims {
         sub: sub.to_string(),
         exp: Some(exp),
+        name: name.to_string(),
+        contact_info: contact_info.to_string(),
     };
     // Create the actual token
     let token_str = claims.sign_with_key(&key)?;
@@ -69,7 +73,7 @@ pub async fn login(
             // Compare provided password with actual hash
             let verified = bcrypt::verify(&login_data.password, actual_hash)?;
             if verified {
-                let token_str = create_signed_token(&u.id)?;
+                let token_str = create_signed_token(&u.id, &u.display_name, &u.contact_info)?;
                 return Ok(HttpResponse::Ok()
                     .content_type("text/plain")
                     .body(token_str));
@@ -83,20 +87,38 @@ pub async fn login(
 
             ldap3::drive!(conn);
 
-            let result = ldap
-                .simple_bind(
-                    &format!(
-                        "uid={},ou=users,ou=Benutzerverwaltung,ou=Computer- und Medienservice,o=Humboldt-Universitaet zu Berlin,c=DE",
-                        &u.id
-                    ),
-                    &login_data.password,
-                )
-                .await?;
+            let user_query = format!(
+                "uid={},ou=users,ou=Benutzerverwaltung,ou=Computer- und Medienservice,o=Humboldt-Universitaet zu Berlin,c=DE",
+                &u.id
+            );
+            let result = ldap.simple_bind(&user_query, &login_data.password).await?;
             if result.rc == 0 {
-                let token_str = create_signed_token(&u.id)?;
-                return Ok(HttpResponse::Ok()
-                    .content_type("text/plain")
-                    .body(token_str));
+                // Gather additional information from LDAP
+                //let user_query = "ou=users,ou=Benutzerverwaltung,ou=Computer- und Medienservice,o=Humboldt-Universitaet zu Berlin,c=DE";
+                let (user_attributes, _) = ldap
+                    .search(
+                        &user_query,
+                        Scope::Subtree,
+                        "(uid=*)",
+                        vec!["cn", "publicEMailAddress"],
+                    )
+                    .await?
+                    .success()?;
+                if let Some(user_attributes) = user_attributes.into_iter().next() {
+                    let user_attributes = SearchEntry::construct(user_attributes);
+
+                    if let (Some(cn), Some(email)) = (
+                        user_attributes.attrs.get("cn"),
+                        user_attributes.attrs.get("publicEMailAddress"),
+                    ) {
+                        if !cn.is_empty() && !email.is_empty() {
+                            let token_str = create_signed_token(&u.id, &cn[0], &email[0])?;
+                            return Ok(HttpResponse::Ok()
+                                .content_type("text/plain")
+                                .body(token_str));
+                        }
+                    }
+                }
             }
         }
     }
@@ -140,53 +162,56 @@ pub async fn add_occupancy(
     }
 
     let conn = db_pool.get()?;
+    let result = conn.transaction::<_, ServiceError, _>(|| {
+        // Get the general room capacity
+        use crate::schema::rooms;
+        let room: Option<Room> = rooms::dsl::rooms
+            .filter(rooms::dsl::id.eq(room.as_ref()))
+            .load(&conn)?
+            .into_iter()
+            .next();
+        if let Some(room) = room {
+            use crate::schema::occupancies::dsl;
+            // Check the number of persons per partially overlapped full hour
+            let mut t = start.clone();
+            while t <= end {
+                let t_next = t + Duration::hours(1);
+                let overlapping_existing: Vec<_> = dsl::occupancies
+                    .filter(dsl::room.eq(&room.id))
+                    .filter(dsl::start.lt(t_next.naive_utc()))
+                    .filter(dsl::end.gt(t.naive_utc()))
+                    .load::<Occupancy>(&conn)?;
 
-    // Get the general room capacity
-    use crate::schema::rooms;
-    let room: Option<Room> = rooms::dsl::rooms
-        .filter(rooms::dsl::id.eq(room.as_ref()))
-        .load(&conn)?
-        .into_iter()
-        .next();
+                if overlapping_existing.len() as i32 >= room.max_occupancy {
+                    debug!(
+                        "Too many overlapping existing events for room {} and new time {}-{}: {:?}",
+                        &room.id, t, t_next, overlapping_existing
+                    );
+                    return Ok(HttpResponse::Forbidden().json("Room already full"));
+                }
 
-    if let Some(room) = room {
-        use crate::schema::occupancies::dsl;
-        // Check the number of persons per partially overlapped full hour
-        let mut t = start.clone();
-        while t <= end {
-            let t_next = t + Duration::hours(1);
-            let overlapping_existing: Vec<_> = dsl::occupancies
-                .filter(dsl::room.eq(&room.id))
-                .filter(dsl::start.lt(t_next.naive_utc()))
-                .filter(dsl::end.gt(t.naive_utc()))
-                .load::<Occupancy>(&conn)?;
-
-            if overlapping_existing.len() as i32 >= room.max_occupancy {
-                debug!(
-                    "Too many overlapping existing events for room {} and new time {}-{}: {:?}",
-                    &room.id, t, t_next, overlapping_existing
-                );
-                return Ok(HttpResponse::Forbidden().json("Room already full"));
+                t = t_next;
             }
 
-            t = t_next;
+            // Check was successful, add the new event
+            let new_item = NewOccupancy {
+                room: room.id,
+                user_id: claims.0.sub.to_string(),
+                user_name: claims.0.name.to_string(),
+                user_contact: claims.0.contact_info.to_string(),
+                start: start.naive_utc(),
+                end: end.naive_utc(),
+            };
+            diesel::insert_into(crate::schema::occupancies::table)
+                .values(new_item.clone())
+                .execute(&conn)?;
+
+            Ok(HttpResponse::Ok().json(new_item))
+        } else {
+            Ok(HttpResponse::NotFound().json("Room not found"))
         }
-
-        // Check was successful, add the new event
-        let new_item = NewOccupancy {
-            room: room.id,
-            user: claims.0.sub.to_string(),
-            start: start.naive_utc(),
-            end: end.naive_utc(),
-        };
-        diesel::insert_into(crate::schema::occupancies::table)
-            .values(new_item.clone())
-            .execute(&conn)?;
-
-        Ok(HttpResponse::Ok().json(new_item))
-    } else {
-        Ok(HttpResponse::NotFound().json("Room not found"))
-    }
+    })?;
+    Ok(result)
 }
 
 #[derive(Deserialize, Clone)]

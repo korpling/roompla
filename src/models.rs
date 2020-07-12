@@ -5,11 +5,14 @@ use chrono::prelude::*;
 pub struct Room {
     pub id: String,
     pub max_occupancy: i32,
+    pub timezone: Option<String>,
 }
 
 #[derive(Queryable, Insertable)]
 pub struct User {
     pub id: String,
+    pub display_name: String,
+    pub contact_info: String,
     pub password_hash: Option<String>,
 }
 
@@ -18,7 +21,9 @@ pub struct User {
 pub struct NewOccupancy {
     pub start: NaiveDateTime,
     pub end: NaiveDateTime,
-    pub user: String,
+    pub user_id: String,
+    pub user_name: String,
+    pub user_contact: String,
     pub room: String,
 }
 
@@ -28,6 +33,8 @@ pub struct Occupancy {
     pub id: i32,
     pub start: NaiveDateTime,
     pub end: NaiveDateTime,
-    pub user: String,
+    pub user_id: String,
+    pub user_name: String,
+    pub user_contact: String,
     pub room: String,
 }
