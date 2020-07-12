@@ -11,6 +11,8 @@
     "lib": [
       "ES2015",
       "DOM"
-    ]
+    ],
+    "resolveJsonModule": true,
+    "allowSyntheticDefaultImports": true,
   }
 }

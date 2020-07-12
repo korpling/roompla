@@ -9,12 +9,12 @@
       <v-col cols="12" sm="8" md="4">
         <v-card class="elevation-12">
           <v-toolbar color="primary" dark flat>
-            <v-toolbar-title>Login</v-toolbar-title>
+            <v-toolbar-title>{{$t('login')}}</v-toolbar-title>
           </v-toolbar>
           <v-card-text>
             <v-form>
               <v-text-field
-                label="User Name"
+                :label="$t('user-name')"
                 name="login"
                 prepend-icon="mdi-account"
                 type="text"
@@ -23,7 +23,7 @@
 
               <v-text-field
                 id="password"
-                label="Password"
+                :label="$t('password')"
                 name="password"
                 prepend-icon="mdi-lock"
                 type="password"
@@ -34,7 +34,7 @@
           </v-card-text>
           <v-card-actions>
             <v-spacer></v-spacer>
-            <v-btn v-on:click="attempt_login" color="primary">Login</v-btn>
+            <v-btn v-on:click="attempt_login" color="primary">{{$t('login')}}</v-btn>
           </v-card-actions>
         </v-card>
       </v-col>

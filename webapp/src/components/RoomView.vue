@@ -1,7 +1,7 @@
 <template>
   <v-container fluid>
     <v-toolbar color="primary" dark flat>
-      <v-toolbar-title>{{room.id}}</v-toolbar-title>
+      <v-toolbar-title>{{$t("room-name", {msg: room.id}) }}</v-toolbar-title>
       <v-toolbar-items>
         <v-select
           v-model="day_range"
@@ -10,7 +10,7 @@
           outlined
           hide-details
           class="ma-2"
-          label="hours"
+          :label="$t('hours-selection')"
         ></v-select>
       </v-toolbar-items>
     </v-toolbar>
@@ -27,6 +27,7 @@
 
 <script lang="ts">
 import Vue from "vue";
+import {i18n} from "../lang/";
 
 export default Vue.extend({
   props: ["room"],
@@ -35,8 +36,8 @@ export default Vue.extend({
       events: [],
       day_range: { start: 7, count: 13 },
       day_ranges: [
-        { text: "working hours", value: { start: 7, count: 13 } },
-        { text: "whole day", value: { start: 0, count: 24 } }
+        { text: i18n.t("working-hours"), value: { start: 7, count: 13 } },
+        { text: i18n.t("whole-day"), value: { start: 0, count: 24 } }
       ]
     };
   },

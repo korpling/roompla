@@ -4,10 +4,10 @@
       <v-container fluid v-if="api.configuration.accessToken">
         <v-row align="center" justify="center">
           <v-col cols="2">
-            <v-btn v-if="room" v-on:click="room = null">Room list</v-btn>
+            <v-btn v-if="room" v-on:click="room = null">{{$t("room-list")}}</v-btn>
           </v-col>
           <v-col cols="2">
-            <v-btn v-on:click="logout">Logout</v-btn>
+            <v-btn v-on:click="logout">{{$t('logout')}}</v-btn>
           </v-col>
         </v-row>
         <div v-if="room">
@@ -34,10 +34,12 @@ import RoomList from "./components/RoomList.vue";
 import { Room } from "./models/Room";
 import { RoomplaApi, LoginPostRequest } from "./apis/RoomplaApi";
 import { Configuration } from "./runtime";
+import {i18n} from "./lang";
 
 Vue.use(VueRouter);
 
 export default Vue.extend({
+  i18n,
   components: { Login, RoomList, RoomView },
   data() {
     return {

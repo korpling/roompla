@@ -1,0 +1,13 @@
+{
+    "logout": "Ausloggen",
+    "user-name": "Nutzername",
+    "password": "Passwort",
+    "login": "Einloggen",
+    "room-name": "Raum {msg}",
+    "room-list": "Raumliste",
+    "people-allowed": "{msg} Personen erlaubt",
+    "book-time-slot": "Arbeitszeit eintragen",
+    "hours-selection": "Stundenanzeige",
+    "working-hours": "Arbeitstag",
+    "whole-day": "Ganzer Tag"
+}

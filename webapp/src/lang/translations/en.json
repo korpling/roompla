@@ -1,0 +1,13 @@
+{
+    "logout": "Logout",
+    "user-name": "User Name",
+    "password": "Password",
+    "login": "Login",
+    "room-name": "room {msg}",
+    "room-list": "Room List",
+    "people-allowed": "{msg} people allowed",
+    "book-time-slot": "Book time slot",
+    "hours-selection": "Hours",
+    "working-hours": "Working Hours",
+    "whole-day": "Whole Day"
+}
