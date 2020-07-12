@@ -1,9 +1,9 @@
 <template>
   <v-container fluid>
-    <v-snackbar v-model="snackbar" top=true multiline="true">{{message_text}}</v-snackbar>
+    <v-snackbar v-model="snackbar" top="true">{{message_text}}</v-snackbar>
 
     <v-toolbar color="primary" dark flat>
-      <v-toolbar-title>{{$t("room-name", {msg: id}) }}</v-toolbar-title>
+      <v-toolbar-title>{{$t("room-name", {msg: id}) }} - {{$tc("people-allowed", peopleAllowed, {count: peopleAllowed})}}</v-toolbar-title>
       <v-toolbar-items>
         <v-btn icon class="hidden-xs-only">
           <v-icon>mdi-arrow-left</v-icon>
@@ -49,7 +49,7 @@ import { store } from "../store";
 import moment from "moment-timezone";
 
 export default Vue.extend({
-  props: ["id", "timezone"],
+  props: ["id", "timezone", "peopleAllowed"],
   data() {
     return {
       locale: i18n.locale,
@@ -171,13 +171,19 @@ export default Vue.extend({
           result => {
             this.message_text = i18n.t("added-entry");
             this.snackbar = true;
-            this.getEvents(this.day_range.start, this.day_range.start + this.day_range.count);
+            this.getEvents(
+              this.day_range.start,
+              this.day_range.start + this.day_range.count
+            );
           },
           failure => {
             failure.text().then(bodyText => {
               this.message_text = i18n.t("error-adding", [bodyText]);
               this.snackbar = true;
-              this.getEvents(this.day_range.start, this.day_range.start + this.day_range.count);
+              this.getEvents(
+                this.day_range.start,
+                this.day_range.start + this.day_range.count
+              );
             });
           }
         );

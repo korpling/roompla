@@ -30,7 +30,15 @@ Vue.use(VueRouter);
 const router = new VueRouter({
   routes: [
     { path: "/", component: RoomList },
-    { path: "/room/:id", component: RoomView, props: (route) => ({ id: route.params.id, timezone: route.query.tz }) }
+    {
+      path: "/room/:id",
+      component: RoomView,
+      props: route => ({
+        id: route.params.id,
+        timezone: route.query.tz,
+        peopleAllowed: route.query.p
+      })
+    }
   ]
 });
 
@@ -40,7 +48,7 @@ export default Vue.extend({
   components: { Login, RoomList, RoomView },
   data() {
     return {
-      userId: null,
+      userId: null
     };
   },
   created: function() {},
@@ -48,12 +56,11 @@ export default Vue.extend({
     login_callback: function(token, userId) {
       store.login(token, userId);
       this.userId = userId;
-      
     },
     logout: function() {
       store.logout();
       this.userId = null;
-    },
+    }
   }
 });
 </script>
