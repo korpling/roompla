@@ -3,9 +3,8 @@
     <v-snackbar v-model="snackbar" top="true">{{message_text}}</v-snackbar>
 
     <v-toolbar color="primary" dark flat>
-      <v-toolbar-title>{{$t("room-name", {msg: id}) }} - {{$tc("people-allowed", peopleAllowed, {count: peopleAllowed})}}</v-toolbar-title>
       <v-toolbar-items>
-        <v-btn icon class="hidden-xs-only">
+        <v-btn icon class="hidden-xs-only" v-on:click="goHome">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         <v-select
@@ -18,6 +17,8 @@
           :label="$t('hours-selection')"
         ></v-select>
       </v-toolbar-items>
+      <v-toolbar-title>{{$t("room-name", {msg: id}) }} - {{$tc("people-allowed", peopleAllowed, {count: peopleAllowed})}}</v-toolbar-title>
+      
     </v-toolbar>
 
     <v-calendar
@@ -47,6 +48,7 @@ import Vue from "vue";
 import { i18n } from "../lang/";
 import { store } from "../store";
 import moment from "moment-timezone";
+
 
 export default Vue.extend({
   props: ["id", "timezone", "peopleAllowed"],
@@ -94,6 +96,9 @@ export default Vue.extend({
         });
 
       this.events = events;
+    },
+    goHome() {
+      this.$router.push("/");
     },
     getEventColor(event) {
       if (event.occupancy == null) {
