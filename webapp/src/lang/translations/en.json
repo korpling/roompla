@@ -15,6 +15,5 @@
     "calendar-week": "Week {0}",
     "next-week": "Next Week",
     "previous-week": "Previous Week",
-    "room-full": "Room is already full for the selected time range.",
-    "edit-event": "Edit entry"
+    "room-full": "Room is already full for the selected time range."
 }

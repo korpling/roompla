@@ -65,7 +65,7 @@
       :activator="selectedElement"
       offset-x
     >
-      <change-event @event-editor-closed="closeEventEditor" :event="selectedEvent"></change-event>
+      <change-event @event-editor-closed="closeEventEditor" :selectedEvent="selectedEvent"></change-event>
     </v-menu>
   </v-container>
 </template>
@@ -82,14 +82,17 @@ export default Vue.extend({
   props: ["id"],
   computed: {
     peopleAllowed: function() {
-      return store.state.rooms[this.id].maxOccupancy;
+      const room = this.store.state.rooms[this.id]
+      if(room) {
+        return room.maxOccupancy;
+      }
     },
     timezone: function() {
-      return store.state.rooms[this.id].timezone;
+      const room = this.store.state.rooms[this.id]
+      if(room) {
+        return room.timezone;
+      }
     }
-  },
-  mounted() {
-    this.$refs.calendar.checkChange();
   },
   data() {
     return {
@@ -110,7 +113,10 @@ export default Vue.extend({
     };
   },
   methods: {
-    getEvents({ start, end }) {
+    getEvents() {
+      const start = this.day_range.start;
+      const end = this.day_range.start + this.day_range.count;
+
       const events = [];
       this.store.state.api
         .roomsRoomOccupanciesGet({ room: this.id })
@@ -148,6 +154,8 @@ export default Vue.extend({
       this.selectedElement = null;
       this.selectedEvent = null;
       this.menuEventEditor = false;
+
+      this.getEvents();
     },
     getCalendarWeek() {
       if (this.focus && this.focus != "") {
@@ -254,10 +262,7 @@ export default Vue.extend({
             result => {
               this.message_text = i18n.t("added-entry");
               this.snackbar = true;
-              this.getEvents(
-                this.day_range.start,
-                this.day_range.start + this.day_range.count
-              );
+              this.getEvents();
             },
             failure => {
               if (failure.status == 409) {
@@ -269,10 +274,7 @@ export default Vue.extend({
                   this.snackbar = true;
                 });
               }
-              this.getEvents(
-                this.day_range.start,
-                this.day_range.start + this.day_range.count
-              );
+              this.getEvents();
             }
           );
       }
