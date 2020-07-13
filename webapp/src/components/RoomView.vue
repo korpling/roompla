@@ -231,12 +231,12 @@ export default Vue.extend({
               failure.text().then(bodyText => {
                 this.message_text = i18n.t("error-adding", [bodyText]);
                 this.snackbar = true;
-                this.getEvents(
-                  this.day_range.start,
-                  this.day_range.start + this.day_range.count
-                );
               });
             }
+            this.getEvents(
+              this.day_range.start,
+              this.day_range.start + this.day_range.count
+            );
           }
         );
 
