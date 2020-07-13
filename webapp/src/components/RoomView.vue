@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <v-snackbar v-model="snackbar" top=true>{{message_text}}</v-snackbar>
+    <v-snackbar v-model="snackbar" :top="true">{{message_text}}</v-snackbar>
 
     <v-toolbar color="primary" dark flat>
       <v-toolbar-items>
