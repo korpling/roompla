@@ -19,9 +19,7 @@
         <v-btn :title="$t('previous-week')" v-on:click="previousWeek" icon>
           <v-icon>mdi-chevron-left</v-icon>
         </v-btn>
-       <v-btn color="primary" v-on:click="focus=''">
-         {{$t("calendar-week", [getCalendarWeek()])}} 
-       </v-btn>
+        <v-btn color="primary" v-on:click="focus=''">{{$t("calendar-week", [getCalendarWeek()])}}</v-btn>
         <v-btn :title="$t('next-week')" v-on:click="nextWeek" icon>
           <v-icon>mdi-chevron-right</v-icon>
         </v-btn>
@@ -93,7 +91,7 @@ export default Vue.extend({
         { text: i18n.t("working-hours"), value: { start: 7, count: 13 } },
         { text: i18n.t("whole-day"), value: { start: 0, count: 24 } }
       ],
-      focus: "",
+      focus: ""
     };
   },
   methods: {
@@ -132,7 +130,7 @@ export default Vue.extend({
       this.$router.push("/");
     },
     getCalendarWeek() {
-      if(this.focus && this.focus != "") {
+      if (this.focus && this.focus != "") {
         return moment(this.focus).format("ww");
       } else {
         return moment().format("ww");
@@ -226,14 +224,19 @@ export default Vue.extend({
             );
           },
           failure => {
-            failure.text().then(bodyText => {
-              this.message_text = i18n.t("error-adding", [bodyText]);
+            if (failure.status == 409) {
+              this.message_text = i18n.t("room-full");
               this.snackbar = true;
-              this.getEvents(
-                this.day_range.start,
-                this.day_range.start + this.day_range.count
-              );
-            });
+            } else {
+              failure.text().then(bodyText => {
+                this.message_text = i18n.t("error-adding", [bodyText]);
+                this.snackbar = true;
+                this.getEvents(
+                  this.day_range.start,
+                  this.day_range.start + this.day_range.count
+                );
+              });
+            }
           }
         );
 

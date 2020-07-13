@@ -14,5 +14,6 @@
     "error-adding": "Could not add entry: {0}",
     "calendar-week": "Week {0}",
     "next-week": "Next Week",
-    "previous-week": "Previous Week"
+    "previous-week": "Previous Week",
+    "room-full": "Room is already full for the selected time range."
 }

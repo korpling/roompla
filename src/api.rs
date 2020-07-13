@@ -187,7 +187,7 @@ pub async fn add_occupancy(
                         "Too many overlapping existing events for room {} and new time {}-{}: {:?}",
                         &room.id, t, t_next, overlapping_existing
                     );
-                    return Ok(HttpResponse::Forbidden().json("Room already full"));
+                    return Ok(HttpResponse::Conflict().json("Room already full"));
                 }
 
                 t = t_next;
