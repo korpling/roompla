@@ -12,7 +12,7 @@
     "whole-day": "Ganzer Tag",
     "added-entry": "Eintrag hinzugefügt",
     "error-adding": "Fehler beim Hinzufügen des Eintrags: {0}",
-    "calendar-week": "KW {0}",
+    "calendar-week": "KW: {0}",
     "next-week": "Nächste Woche",
     "previous-week": "Vorherige Woche"
 }

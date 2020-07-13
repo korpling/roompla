@@ -56,10 +56,6 @@ export default Vue.extend({
       }
     };
   },
-  created: function() {},
-  watch: {
-    $route: "fetch_rooms"
-  },
   methods: {
     login_callback: function(token, userId) {
       store.login(token, userId);
