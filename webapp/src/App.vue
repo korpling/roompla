@@ -53,7 +53,8 @@ export default Vue.extend({
       message: {
         text: "",
         show: false,
-      }
+      },
+      store: store
     };
   },
   methods: {
