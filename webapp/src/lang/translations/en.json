@@ -11,5 +11,8 @@
     "working-hours": "Working Hours",
     "whole-day": "Whole Day",
     "added-entry": "Added entry",
-    "error-adding": "Could not add entry: {0}"
+    "error-adding": "Could not add entry: {0}",
+    "calendar-week": "Week {0}",
+    "next-week": "Next Week",
+    "previous-week": "Previous Week"
 }

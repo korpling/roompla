@@ -4,7 +4,7 @@
 
     <v-toolbar color="primary" dark flat>
       <v-toolbar-items>
-        <v-btn icon class="hidden-xs-only" v-on:click="goHome">
+        <v-btn icon label="Go back to room list" v-on:click="goHome">
           <v-icon>mdi-arrow-left</v-icon>
         </v-btn>
         <v-select
@@ -16,26 +16,31 @@
           class="ma-2"
           :label="$t('hours-selection')"
         ></v-select>
+        <v-btn :title="$t('previous-week')" v-on:click="previousWeek" icon>
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
+
+        <v-btn :title="$t('next-week')" v-on:click="nextWeek" icon>
+          <v-icon>mdi-chevron-right</v-icon>
+        </v-btn>
       </v-toolbar-items>
-      <v-toolbar-title>{{$t("room-name", {msg: id}) }}</v-toolbar-title>
+      <v-toolbar-title>{{$t("calendar-week", [getCalendarWeek()])}} | {{$t("room-name", {msg: id}) }}</v-toolbar-title>
     </v-toolbar>
     <div class="text-center ma-2">
       <v-chip label color="primary">
-        <v-avatar-left>
-          <v-icon>mdi-account-multiple</v-icon>
-        </v-avatar-left>
+        <v-icon>mdi-account-multiple</v-icon>
         {{$tc("people-allowed", peopleAllowed, {count: peopleAllowed})}}
       </v-chip>
       <v-chip label color="secondary">
-        <v-avatar-left>
-          <v-icon>mdi-map-clock</v-icon>
-        </v-avatar-left>
+        <v-icon>mdi-map-clock</v-icon>
         {{timezone}}
       </v-chip>
     </div>
 
     <v-calendar
+      ref="calendar"
       type="week"
+      v-model="focus"
       :events="events"
       :first-interval="day_range.start"
       :interval-count="day_range.count"
@@ -72,6 +77,9 @@ export default Vue.extend({
       return store.state.rooms[this.id].timezone;
     }
   },
+  mounted() {
+    this.$refs.calendar.checkChange();
+  },
   data() {
     return {
       locale: i18n.locale,
@@ -82,7 +90,8 @@ export default Vue.extend({
       day_ranges: [
         { text: i18n.t("working-hours"), value: { start: 7, count: 13 } },
         { text: i18n.t("whole-day"), value: { start: 0, count: 24 } }
-      ]
+      ],
+      focus: "",
     };
   },
   methods: {
@@ -119,6 +128,19 @@ export default Vue.extend({
     },
     goHome() {
       this.$router.push("/");
+    },
+    getCalendarWeek() {
+      if(this.focus && this.focus != "") {
+        return moment(this.focus).format("ww");
+      } else {
+        return moment().format("ww");
+      }
+    },
+    previousWeek() {
+      this.$refs.calendar.prev();
+    },
+    nextWeek() {
+      this.$refs.calendar.next();
     },
     getEventColor(event) {
       if (event.occupancy == null) {
