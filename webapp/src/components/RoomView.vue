@@ -19,12 +19,14 @@
         <v-btn :title="$t('previous-week')" v-on:click="previousWeek" icon>
           <v-icon>mdi-chevron-left</v-icon>
         </v-btn>
-
+       <v-btn color="primary" v-on:click="focus=''">
+         {{$t("calendar-week", [getCalendarWeek()])}} 
+       </v-btn>
         <v-btn :title="$t('next-week')" v-on:click="nextWeek" icon>
           <v-icon>mdi-chevron-right</v-icon>
         </v-btn>
       </v-toolbar-items>
-      <v-toolbar-title>{{$t("calendar-week", [getCalendarWeek()])}} | {{$t("room-name", {msg: id}) }}</v-toolbar-title>
+      <v-toolbar-title>{{$t("room-name", {msg: id}) }}</v-toolbar-title>
     </v-toolbar>
     <div class="text-center ma-2">
       <v-chip label color="primary">
