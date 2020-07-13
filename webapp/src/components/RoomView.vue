@@ -17,9 +17,22 @@
           :label="$t('hours-selection')"
         ></v-select>
       </v-toolbar-items>
-      <v-toolbar-title>{{$t("room-name", {msg: id}) }} - {{$tc("people-allowed", peopleAllowed, {count: peopleAllowed})}}</v-toolbar-title>
-      
+      <v-toolbar-title>{{$t("room-name", {msg: id}) }}</v-toolbar-title>
     </v-toolbar>
+    <div class="text-center ma-2">
+      <v-chip label color="primary">
+        <v-avatar-left>
+          <v-icon>mdi-account-multiple</v-icon>
+        </v-avatar-left>
+        {{$tc("people-allowed", peopleAllowed, {count: peopleAllowed})}}
+      </v-chip>
+      <v-chip label color="secondary">
+        <v-avatar-left>
+          <v-icon>mdi-map-clock</v-icon>
+        </v-avatar-left>
+        {{timezone}}
+      </v-chip>
+    </div>
 
     <v-calendar
       type="week"
@@ -48,7 +61,6 @@ import Vue from "vue";
 import { i18n } from "../lang/";
 import { store } from "../store";
 import moment from "moment-timezone";
-
 
 export default Vue.extend({
   props: ["id"],
