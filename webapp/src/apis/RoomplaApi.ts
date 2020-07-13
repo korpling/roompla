@@ -47,6 +47,7 @@ export interface RoomsRoomOccupanciesIdDeleteRequest {
 export interface RoomsRoomOccupanciesIdPutRequest {
     room: string;
     id: string;
+    timeRange: TimeRange;
 }
 
 export interface RoomsRoomOccupanciesPutRequest {
@@ -233,9 +234,15 @@ export class RoomplaApi extends runtime.BaseAPI {
             throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling roomsRoomOccupanciesIdPut.');
         }
 
+        if (requestParameters.timeRange === null || requestParameters.timeRange === undefined) {
+            throw new runtime.RequiredError('timeRange','Required parameter requestParameters.timeRange was null or undefined when calling roomsRoomOccupanciesIdPut.');
+        }
+
         const queryParameters: runtime.HTTPQuery = {};
 
         const headerParameters: runtime.HTTPHeaders = {};
+
+        headerParameters['Content-Type'] = 'application/json';
 
         if (this.configuration && this.configuration.accessToken) {
             const token = this.configuration.accessToken;
@@ -250,6 +257,7 @@ export class RoomplaApi extends runtime.BaseAPI {
             method: 'PUT',
             headers: headerParameters,
             query: queryParameters,
+            body: TimeRangeToJSON(requestParameters.timeRange),
         });
 
         return new runtime.VoidApiResponse(response);

@@ -19,13 +19,13 @@
         <v-container fill-height fluid>
           <v-row align="center" justify="center">
             <v-col>
-              <v-time-picker format="24hr" v-model="start"></v-time-picker>
+              <v-time-picker format="24hr" :allowed-minutes="['00']" v-model="start"></v-time-picker>
             </v-col>
             <v-col>
               <v-icon x-large>mdi-arrow-right</v-icon>
             </v-col>
             <v-col>
-              <v-time-picker format="24hr" v-model="end"></v-time-picker>
+              <v-time-picker format="24hr" v-model="end" :allowed-minutes="['00']"></v-time-picker>
             </v-col>
           </v-row>
         </v-container>
@@ -58,10 +58,18 @@ export default Vue.extend({
   },
   methods: {
     saveEvent() {
+      const parsed_start = moment(this.start,"HH:mm");
+      const parsed_end = moment(this.end,"HH:mm");
+      const adjusted_start = moment(this.selectedEvent.start, "YYYY-MM-DD HH:mm:ss").hour(parsed_start.hour()).minute(parsed_start.minute());
+      const adjusted_end = moment(this.selectedEvent.end, "YYYY-MM-DD HH:mm:ss").hour(parsed_end.hour()).minute(parsed_end.minute());
       this.store.state.api
-        .roomsRoomOccupanciesIdDelete({
+        .roomsRoomOccupanciesIdPut({
           room: this.selectedEvent.occupancy.room,
-          id: this.selectedEvent.occupancy.id
+          id: this.selectedEvent.occupancy.id,
+          timeRange: {
+            start: adjusted_start.toISOString(),
+            end: adjusted_end.toISOString(),
+          }
         })
         .then(
           response => {
