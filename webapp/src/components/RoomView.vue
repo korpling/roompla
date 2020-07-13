@@ -46,6 +46,7 @@
       :interval-count="day_range.count"
       :locale="locale"
       :event-color="getEventColor"
+      @click:event="showEvent"
       @change="getEvents"
       @mousedown:event="startDrag"
       @mousedown:time="startTime"
@@ -58,16 +59,26 @@
         <div v-if="timed" class="v-event-drag-bottom" @mousedown.stop="extendBottom(event)"></div>
       </template>
     </v-calendar>
+    <v-menu
+      v-model="menuEventEditor"
+      :close-on-content-click="false"
+      :activator="selectedElement"
+      offset-x
+    >
+      <change-event @event-editor-closed="closeEventEditor" :event="selectedEvent"></change-event>
+    </v-menu>
   </v-container>
 </template>
 
 <script lang="ts">
 import Vue from "vue";
+import ChangeEvent from "./ChangeEvent.vue";
 import { i18n } from "../lang/";
 import { store } from "../store";
 import moment from "moment-timezone";
 
 export default Vue.extend({
+  components: { ChangeEvent },
   props: ["id"],
   computed: {
     peopleAllowed: function() {
@@ -91,13 +102,17 @@ export default Vue.extend({
         { text: i18n.t("working-hours"), value: { start: 7, count: 13 } },
         { text: i18n.t("whole-day"), value: { start: 0, count: 24 } }
       ],
-      focus: ""
+      focus: "",
+      store: store,
+      menuEventEditor: false,
+      selectedEvent: null,
+      selectedElement: null
     };
   },
   methods: {
     getEvents({ start, end }) {
       const events = [];
-      store.state.api
+      this.store.state.api
         .roomsRoomOccupanciesGet({ room: this.id })
         .then(result => {
           if (this.timezone == null) {
@@ -129,6 +144,11 @@ export default Vue.extend({
     goHome() {
       this.$router.push("/");
     },
+    closeEventEditor() {
+      this.selectedElement = null;
+      this.selectedEvent = null;
+      this.menuEventEditor = false;
+    },
     getCalendarWeek() {
       if (this.focus && this.focus != "") {
         return moment(this.focus).format("ww");
@@ -150,6 +170,21 @@ export default Vue.extend({
       } else {
         return "blue";
       }
+    },
+    showEvent({ nativeEvent, event }) {
+      const open = () => {
+        this.selectedEvent = event;
+        this.selectedElement = nativeEvent.target;
+        setTimeout(() => (this.menuEventEditor = true), 1);
+      };
+
+      if (this.menuEventEditor) {
+        this.menuEventEditor = false;
+        setTimeout(open, 1);
+      } else {
+        open();
+      }
+      nativeEvent.stopPropagation();
     },
     startDrag({ event, timed }) {
       if (event && timed) {
@@ -205,40 +240,42 @@ export default Vue.extend({
       }
     },
     endDrag() {
-      // submit event to rest API
-      store.state.api
-        .roomsRoomOccupanciesPut({
-          room: this.id,
-          timeRange: {
-            start: moment.utc(this.createEvent.start).toISOString(),
-            end: moment.utc(this.createEvent.end).toISOString()
-          }
-        })
-        .then(
-          result => {
-            this.message_text = i18n.t("added-entry");
-            this.snackbar = true;
-            this.getEvents(
-              this.day_range.start,
-              this.day_range.start + this.day_range.count
-            );
-          },
-          failure => {
-            if (failure.status == 409) {
-              this.message_text = i18n.t("room-full");
-              this.snackbar = true;
-            } else {
-              failure.text().then(bodyText => {
-                this.message_text = i18n.t("error-adding", [bodyText]);
-                this.snackbar = true;
-              });
+      if (this.createEvent) {
+        // submit event to rest API
+        store.state.api
+          .roomsRoomOccupanciesPut({
+            room: this.id,
+            timeRange: {
+              start: moment.utc(this.createEvent.start).toISOString(),
+              end: moment.utc(this.createEvent.end).toISOString()
             }
-            this.getEvents(
-              this.day_range.start,
-              this.day_range.start + this.day_range.count
-            );
-          }
-        );
+          })
+          .then(
+            result => {
+              this.message_text = i18n.t("added-entry");
+              this.snackbar = true;
+              this.getEvents(
+                this.day_range.start,
+                this.day_range.start + this.day_range.count
+              );
+            },
+            failure => {
+              if (failure.status == 409) {
+                this.message_text = i18n.t("room-full");
+                this.snackbar = true;
+              } else {
+                failure.text().then(bodyText => {
+                  this.message_text = i18n.t("error-adding", [bodyText]);
+                  this.snackbar = true;
+                });
+              }
+              this.getEvents(
+                this.day_range.start,
+                this.day_range.start + this.day_range.count
+              );
+            }
+          );
+      }
 
       this.dragTime = null;
       this.dragEvent = null;

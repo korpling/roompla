@@ -165,6 +165,8 @@ components:
     Occupancy:
       type: object
       properties:
+        id:
+          type: integer
         start:
           type: string
           description: RFC 3339 formatted start time and truncated to hourly precision

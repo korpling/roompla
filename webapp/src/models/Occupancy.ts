@@ -20,6 +20,12 @@ import { exists, mapValues } from '../runtime';
  */
 export interface Occupancy {
     /**
+     * 
+     * @type {number}
+     * @memberof Occupancy
+     */
+    id?: number;
+    /**
      * RFC 3339 formatted start time and truncated to hourly precision
      * @type {string}
      * @memberof Occupancy
@@ -67,6 +73,7 @@ export function OccupancyFromJSONTyped(json: any, ignoreDiscriminator: boolean):
     }
     return {
         
+        'id': !exists(json, 'id') ? undefined : json['id'],
         'start': !exists(json, 'start') ? undefined : json['start'],
         'end': !exists(json, 'end') ? undefined : json['end'],
         'room': !exists(json, 'room') ? undefined : json['room'],
@@ -85,6 +92,7 @@ export function OccupancyToJSON(value?: Occupancy | null): any {
     }
     return {
         
+        'id': value.id,
         'start': value.start,
         'end': value.end,
         'room': value.room,
