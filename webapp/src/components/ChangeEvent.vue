@@ -55,6 +55,7 @@ export default Vue.extend({
   mounted() {
     this.start = moment(this.selectedEvent.start).format("HH:mm");
     this.end = moment(this.selectedEvent.end).format("HH:mm");
+    this.store = store;
   },
   methods: {
     saveEvent() {

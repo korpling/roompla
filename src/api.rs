@@ -307,7 +307,7 @@ pub async fn get_occupancies(
     params: web::Query<RoomOccupancyParams>,
     room: web::Path<String>,
     db_pool: web::Data<DbPool>,
-    _claims: ClaimsFromAuth,
+    claims: ClaimsFromAuth,
 ) -> Result<HttpResponse, ServiceError> {
     // Parse the dates and round them to the full hour
     let start = if let Some(start) = &params.start {
@@ -343,7 +343,7 @@ pub async fn get_occupancies(
     if let Some(room) = room {
         use crate::schema::occupancies::dsl;
         // Get all occupancy events for the given range
-        let result = if let (Some(start), Some(end)) = (start, end) {
+        let mut result = if let (Some(start), Some(end)) = (start, end) {
             dsl::occupancies
                 .filter(dsl::room.eq(&room.id))
                 .filter(dsl::start.ge(start.naive_utc()))
@@ -364,6 +364,15 @@ pub async fn get_occupancies(
                 .filter(dsl::room.eq(&room.id))
                 .load::<Occupancy>(&conn)?
         };
+
+        // anonymize all occupancy entries for other users
+        for mut o in result.iter_mut() {
+            if o.user_id != claims.0.sub {
+                o.user_id = "<anonym>".to_string();
+                o.user_contact = "".to_string();
+                o.user_name = "<anonym>".to_string();
+            }
+        }
 
         Ok(HttpResponse::Ok().json(result))
     } else {
