@@ -65,7 +65,7 @@
       :activator="selectedElement"
       offset-x
     >
-      <change-event @event-editor-closed="closeEventEditor" :selectedEvent="selectedEvent" :store="store"></change-event>
+      <change-event @event-editor-closed="closeEventEditor" :selectedEvent="getSelectedEvent()"></change-event>
     </v-menu>
   </v-container>
 </template>
@@ -75,10 +75,11 @@ import Vue from "vue";
 import ChangeEvent from "./ChangeEvent.vue";
 import { i18n } from "../lang/";
 import moment from "moment-timezone";
+import {store} from "../store";
 
 export default Vue.extend({
   components: { ChangeEvent },
-  props: ["id", "store"],
+  props: ["id"],
   computed: {
     peopleAllowed: function() {
       const room = this.store.state.rooms[this.id];
@@ -95,6 +96,7 @@ export default Vue.extend({
   },
   data() {
     return {
+      store: null,
       locale: i18n.locale,
       events: [],
       snackbar: false,
@@ -109,6 +111,9 @@ export default Vue.extend({
       selectedEvent: null,
       selectedElement: null
     };
+  },
+  created: function() {
+    this.store = store;
   },
   methods: {
     getEvents() {
@@ -151,6 +156,9 @@ export default Vue.extend({
     goHome() {
       this.$router.push("/");
     },
+    getSelectedEvent() {
+      return this.selectedEvent;
+    },
     closeEventEditor() {
       this.selectedElement = null;
       this.selectedEvent = null;
@@ -181,7 +189,6 @@ export default Vue.extend({
       }
     },
     showEvent({ nativeEvent, event }) {
-      this.selectedEvent = event;
       const open = () => {
         this.selectedEvent = event;
         this.selectedElement = nativeEvent.target;

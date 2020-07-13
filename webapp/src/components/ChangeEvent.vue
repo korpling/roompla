@@ -3,7 +3,7 @@
     <v-card flat>
       <v-toolbar>
         <div v-if="selectedEvent != null && store.state.userId === selectedEvent.occupancy.userId">
-          <v-btn icon>
+          <v-btn icon v-on:click="saveEvent">
             <v-icon>mdi-content-save</v-icon>
           </v-btn>
           <v-btn icon v-on:click="deleteEvent">
@@ -17,11 +17,13 @@
       </v-toolbar>
       <v-card-text>
         <v-container fill-height fluid>
-          <v-row  align="center" justify="center">
+          <v-row align="center" justify="center">
             <v-col>
               <v-time-picker format="24hr" v-model="start"></v-time-picker>
             </v-col>
-            <v-col><v-icon x-large>mdi-arrow-right</v-icon></v-col>
+            <v-col>
+              <v-icon x-large>mdi-arrow-right</v-icon>
+            </v-col>
             <v-col>
               <v-time-picker format="24hr" v-model="end"></v-time-picker>
             </v-col>
@@ -35,22 +37,46 @@
 <script lang="ts">
 import Vue from "vue";
 import { RoomplaApi } from "../apis/RoomplaApi";
+import {store} from "../store";
 import moment from "moment-timezone";
 
 export default Vue.extend({
-  props: ["selectedEvent", "store"],
-  data() {
+  props: ["selectedEvent"],
+   data() {
     return {
-      start: moment(this.selectedEvent.start).format("HH:mm:ss"),
-      end: moment(this.selectedEvent.end).format("HH:mm:ss")
+      store: null,
+      start: null,
+      end: null,
     };
   },
+  created() {
+    this.store = store;
+  },
+  mounted() {
+    this.start = moment(this.selectedEvent.start).format("HH:mm");
+    this.end = moment(this.selectedEvent.end).format("HH:mm");
+  },
   methods: {
+    saveEvent() {
+      this.store.state.api
+        .roomsRoomOccupanciesIdDelete({
+          room: this.selectedEvent.occupancy.room,
+          id: this.selectedEvent.occupancy.id
+        })
+        .then(
+          response => {
+            this.$emit("event-editor-closed");
+          },
+          response => {
+            alert(response.statusText);
+          }
+        );
+    },
     deleteEvent() {
       this.store.state.api
         .roomsRoomOccupanciesIdDelete({
-          room: this.updatedEvent.occupancy.room,
-          id: this.updatedEvent.occupancy.id
+          room: this.selectedEvent.occupancy.room,
+          id: this.selectedEvent.occupancy.id
         })
         .then(
           response => {
