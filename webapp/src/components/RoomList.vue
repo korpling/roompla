@@ -19,25 +19,8 @@ import { RoomplaApi } from "../apis/RoomplaApi";
 import {store} from "../store";
 
 export default Vue.extend({
-  created() {
-    this.fetch_rooms();
-  },
   data() {
     return {store: store};
-  },
-  watch: {
-    $route: "fetch_rooms"
-  },
-  methods: {
-    fetch_rooms: function() {
-      store.state.api.roomsGet().then(
-        response => (store.set_rooms(response)),
-        reason => {
-          this.message.text = "Could not fetch rooms: " + reason;
-          this.message.show = true;
-        }
-      );
-    }
   }
 });
 </script>

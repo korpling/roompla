@@ -1,6 +1,7 @@
 <template>
   <v-app>
     <v-main>
+      <v-snackbar v-model="message.show" :top="true">{{message.text}}</v-snackbar>
       <v-container fluid v-if="userId">
         <router-view></router-view>
         <v-footer>
@@ -48,18 +49,35 @@ export default Vue.extend({
   components: { Login, RoomList, RoomView },
   data() {
     return {
-      userId: null
+      userId: null,
+      message: {
+        text: "",
+        show: false,
+      }
     };
   },
   created: function() {},
+  watch: {
+    $route: "fetch_rooms"
+  },
   methods: {
     login_callback: function(token, userId) {
       store.login(token, userId);
       this.userId = userId;
+      this.fetch_rooms();
     },
     logout: function() {
       store.logout();
       this.userId = null;
+    },
+    fetch_rooms: function() {
+      store.state.api.roomsGet().then(
+        response => (store.set_rooms(response)),
+        reason => {
+          this.message.text = "Could not fetch rooms: " + reason;
+          this.message.show = true;
+        }
+      );
     }
   }
 });
