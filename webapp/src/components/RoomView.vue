@@ -65,7 +65,7 @@
       :activator="selectedElement"
       offset-x
     >
-      <change-event @event-editor-closed="closeEventEditor" :selectedEvent="selectedEvent"></change-event>
+      <change-event @event-editor-closed="closeEventEditor" :selectedEvent="selectedEvent" :store="store"></change-event>
     </v-menu>
   </v-container>
 </template>
@@ -74,22 +74,21 @@
 import Vue from "vue";
 import ChangeEvent from "./ChangeEvent.vue";
 import { i18n } from "../lang/";
-import { store } from "../store";
 import moment from "moment-timezone";
 
 export default Vue.extend({
   components: { ChangeEvent },
-  props: ["id"],
+  props: ["id", "store"],
   computed: {
     peopleAllowed: function() {
-      const room = this.store.state.rooms[this.id]
-      if(room) {
+      const room = this.store.state.rooms[this.id];
+      if (room) {
         return room.maxOccupancy;
       }
     },
     timezone: function() {
-      const room = this.store.state.rooms[this.id]
-      if(room) {
+      const room = this.store.state.rooms[this.id];
+      if (room) {
         return room.timezone;
       }
     }
@@ -106,7 +105,6 @@ export default Vue.extend({
         { text: i18n.t("whole-day"), value: { start: 0, count: 24 } }
       ],
       focus: "",
-      store: store,
       menuEventEditor: false,
       selectedEvent: null,
       selectedElement: null
@@ -118,14 +116,14 @@ export default Vue.extend({
       const end = this.day_range.start + this.day_range.count;
 
       const events = [];
-      this.store.state.api
-        .roomsRoomOccupanciesGet({ room: this.id })
-        .then(result => {
+      this.store.state.api.roomsRoomOccupanciesGet({ room: this.id }).then(
+        result => {
           if (this.timezone == null) {
             this.timezone = "UTC";
           }
           for (var o of result) {
             // Transform from UTC to local time
+
             const start = moment
               .utc(o.start)
               .tz(this.timezone)
@@ -141,9 +139,12 @@ export default Vue.extend({
               timed: true,
               occupancy: o
             });
+          
           }
           this.events = events;
-        });
+        },
+        response => {}
+      );
 
       this.events = events;
     },
@@ -173,17 +174,18 @@ export default Vue.extend({
     getEventColor(event) {
       if (event.occupancy == null) {
         return "grey";
-      } else if (event.occupancy.userId === store.state.userId) {
+      } else if (event.occupancy.userId === this.store.state.userId) {
         return "red";
       } else {
         return "blue";
       }
     },
     showEvent({ nativeEvent, event }) {
+      this.selectedEvent = event;
       const open = () => {
         this.selectedEvent = event;
         this.selectedElement = nativeEvent.target;
-        setTimeout(() => (this.menuEventEditor = true), 1);
+        setTimeout(() => (this.menuEventEditor = true), 10);
       };
 
       if (this.menuEventEditor) {
@@ -250,7 +252,7 @@ export default Vue.extend({
     endDrag() {
       if (this.createEvent) {
         // submit event to rest API
-        store.state.api
+        this.store.state.api
           .roomsRoomOccupanciesPut({
             room: this.id,
             timeRange: {

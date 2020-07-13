@@ -37,7 +37,8 @@ const router = new VueRouter({
       props: route => ({
         id: route.params.id,
         timezone: route.query.tz,
-        peopleAllowed: route.query.p
+        peopleAllowed: route.query.p,
+        store: store,
       })
     }
   ]
