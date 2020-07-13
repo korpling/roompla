@@ -70,12 +70,16 @@ paths:
             schema:
               $ref: "#/components/schemas/TimeRange"
       responses:
-        default:
+        200:
           description: The new entry
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Occupancy"
+        409:
+          description: The room is already full.
+        404:
+          description: The room was not found
     get:
       summary: Get all (possibly filtered) occupancies for the given room.
       tags:
@@ -105,6 +109,50 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Occupancy"
+
+  /rooms/{room}/occupancies/{id}:
+    put:
+      summary: Update an existing occupancy entry
+      tags:
+        - roompla
+      parameters:
+        - name: room
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Update was successful
+        409:
+          description: The room would be too full if the update would be executed.
+        404:
+          description: The room was not found
+    delete:
+      summary: Delete an existing occupancy entry
+      tags:
+        - roompla
+      parameters:
+        - name: room
+          required: true
+          in: path
+          schema:
+            type: string
+        - name: id
+          required: true
+          in: path
+          schema:
+            type: string
+      responses:
+        200:
+          description: Deletion was successful
+        404:
+          description: The room was not found
 
 components:
   securitySchemes:

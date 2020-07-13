@@ -5,7 +5,7 @@ use crate::{
     DbPool,
 };
 use actix_web::{web, HttpResponse};
-use chrono::{DateTime, Duration, DurationRound};
+use chrono::{DateTime, Duration, DurationRound, TimeZone};
 use diesel::prelude::*;
 use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
@@ -144,6 +144,39 @@ pub async fn all_rooms(
     Ok(HttpResponse::Ok().json(rooms))
 }
 
+fn check_if_room_available<Conn: Connection<Backend = diesel::sqlite::Sqlite>, Tz: TimeZone>(
+    conn: &Conn,
+    room: &Room,
+    start: DateTime<Tz>,
+    end: DateTime<Tz>,
+    ignore_id: Option<i32>,
+) -> Result<bool, ServiceError> {
+    use crate::schema::occupancies::dsl;
+    // Check the number of persons per partially overlapped full hour
+    let mut t = start.clone();
+    while t <= end {
+        let t_next = t.clone() + Duration::hours(1);
+        let basic_overlap_query = dsl::occupancies
+            .filter(dsl::room.eq(&room.id))
+            .filter(dsl::start.lt(t_next.naive_utc()))
+            .filter(dsl::end.gt(t.naive_utc()));
+
+        let overlapping_existing: Vec<_> = if let Some(ignore_id) = ignore_id {
+            basic_overlap_query
+                .filter(dsl::id.ne(ignore_id))
+                .load::<Occupancy>(conn)?
+        } else {
+            basic_overlap_query.load::<Occupancy>(conn)?
+        };
+
+        if overlapping_existing.len() as i32 >= room.max_occupancy {
+            return Ok(false);
+        }
+        t = t_next;
+    }
+    Ok(true)
+}
+
 pub async fn add_occupancy(
     event: web::Json<TimeRange>,
     room: web::Path<String>,
@@ -171,45 +204,95 @@ pub async fn add_occupancy(
             .into_iter()
             .next();
         if let Some(room) = room {
-            use crate::schema::occupancies::dsl;
-            // Check the number of persons per partially overlapped full hour
-            let mut t = start.clone();
-            while t <= end {
-                let t_next = t + Duration::hours(1);
-                let overlapping_existing: Vec<_> = dsl::occupancies
-                    .filter(dsl::room.eq(&room.id))
-                    .filter(dsl::start.lt(t_next.naive_utc()))
-                    .filter(dsl::end.gt(t.naive_utc()))
-                    .load::<Occupancy>(&conn)?;
+            if check_if_room_available(&conn, &room, start.clone(), end.clone(), None)? {
+                // Check was successful, add the new event
+                let new_item = NewOccupancy {
+                    room: room.id,
+                    user_id: claims.0.sub.to_string(),
+                    user_name: claims.0.name.to_string(),
+                    user_contact: claims.0.contact_info.to_string(),
+                    start: start.naive_utc(),
+                    end: end.naive_utc(),
+                };
+                diesel::insert_into(crate::schema::occupancies::table)
+                    .values(new_item.clone())
+                    .execute(&conn)?;
 
-                if overlapping_existing.len() as i32 >= room.max_occupancy {
-                    debug!(
-                        "Too many overlapping existing events for room {} and new time {}-{}: {:?}",
-                        &room.id, t, t_next, overlapping_existing
-                    );
-                    return Ok(HttpResponse::Conflict().json("Room already full"));
-                }
-
-                t = t_next;
+                Ok(HttpResponse::Ok().json(new_item))
+            } else {
+                return Ok(HttpResponse::Conflict().json("Room already full"));
             }
-
-            // Check was successful, add the new event
-            let new_item = NewOccupancy {
-                room: room.id,
-                user_id: claims.0.sub.to_string(),
-                user_name: claims.0.name.to_string(),
-                user_contact: claims.0.contact_info.to_string(),
-                start: start.naive_utc(),
-                end: end.naive_utc(),
-            };
-            diesel::insert_into(crate::schema::occupancies::table)
-                .values(new_item.clone())
-                .execute(&conn)?;
-
-            Ok(HttpResponse::Ok().json(new_item))
         } else {
             Ok(HttpResponse::NotFound().json("Room not found"))
         }
+    })?;
+    Ok(result)
+}
+
+pub async fn update_occupancy(
+    path: web::Path<(String, i32)>,
+    event: web::Json<TimeRange>,
+    db_pool: web::Data<DbPool>,
+    claims: ClaimsFromAuth,
+) -> Result<HttpResponse, ServiceError> {
+    let conn = db_pool.get()?;
+    let result = conn.transaction::<_, ServiceError, _>(|| {
+        use crate::schema::occupancies;
+        use crate::schema::rooms;
+
+        // Parse the dates and round them to the full hour
+        let start =
+            DateTime::parse_from_rfc3339(&event.start)?.duration_round(Duration::hours(1))?;
+        let end = DateTime::parse_from_rfc3339(&event.end)?.duration_round(Duration::hours(1))?;
+
+        let room: Option<Room> = rooms::dsl::rooms
+            .filter(rooms::dsl::id.eq(path.0.as_str()))
+            .load(&conn)?
+            .into_iter()
+            .next();
+        if let Some(room) = room {
+            // Check if this event would lead to an invalid state
+            if check_if_room_available(&conn, &room, start, end, Some(path.1))? {
+                // Only update if this event is from the same user
+                diesel::update(occupancies::dsl::occupancies)
+                    .set((
+                        occupancies::dsl::start.eq(start.naive_utc()),
+                        occupancies::dsl::end.eq(end.naive_utc()),
+                    ))
+                    .filter(occupancies::dsl::id.eq(path.1))
+                    .filter(occupancies::dsl::room.eq(path.0.as_str()))
+                    .filter(occupancies::dsl::user_id.eq(claims.0.sub))
+                    .execute(&conn)?;
+                Ok(HttpResponse::Ok().finish())
+            } else {
+                Ok(HttpResponse::Conflict().json("Room already full"))
+            }
+        } else {
+            Ok(HttpResponse::NotFound().json("Room not found"))
+        }
+    })?;
+    Ok(result)
+}
+
+pub async fn delete_occupancy(
+    path: web::Path<(String, i32)>,
+    db_pool: web::Data<DbPool>,
+    claims: ClaimsFromAuth,
+) -> Result<HttpResponse, ServiceError> {
+    let conn = db_pool.get()?;
+    let result = conn.transaction::<_, ServiceError, _>(|| {
+        use crate::schema::occupancies;
+
+        // Only delete if this event is from the same user
+        diesel::delete(
+            occupancies::dsl::occupancies
+                .filter(occupancies::dsl::id.eq(path.1))
+                .filter(occupancies::dsl::room.eq(path.0.as_str()))
+                .filter(occupancies::dsl::user_id.eq(claims.0.sub)),
+        )
+        .execute(&conn)?;
+
+        Ok(HttpResponse::Ok().finish())
     })?;
     Ok(result)
 }

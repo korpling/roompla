@@ -39,6 +39,16 @@ export interface RoomsRoomOccupanciesGetRequest {
     end?: string;
 }
 
+export interface RoomsRoomOccupanciesIdDeleteRequest {
+    room: string;
+    id: string;
+}
+
+export interface RoomsRoomOccupanciesIdPutRequest {
+    room: string;
+    id: string;
+}
+
 export interface RoomsRoomOccupanciesPutRequest {
     room: string;
     timeRange: TimeRange;
@@ -168,6 +178,88 @@ export class RoomplaApi extends runtime.BaseAPI {
     async roomsRoomOccupanciesGet(requestParameters: RoomsRoomOccupanciesGetRequest): Promise<Array<Occupancy>> {
         const response = await this.roomsRoomOccupanciesGetRaw(requestParameters);
         return await response.value();
+    }
+
+    /**
+     * Delete an existing occupancy entry
+     */
+    async roomsRoomOccupanciesIdDeleteRaw(requestParameters: RoomsRoomOccupanciesIdDeleteRequest): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters.room === null || requestParameters.room === undefined) {
+            throw new runtime.RequiredError('room','Required parameter requestParameters.room was null or undefined when calling roomsRoomOccupanciesIdDelete.');
+        }
+
+        if (requestParameters.id === null || requestParameters.id === undefined) {
+            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling roomsRoomOccupanciesIdDelete.');
+        }
+
+        const queryParameters: runtime.HTTPQuery = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = typeof token === 'function' ? token("bearerAuth", []) : token;
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/rooms/{room}/occupancies/{id}`.replace(`{${"room"}}`, encodeURIComponent(String(requestParameters.room))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            method: 'DELETE',
+            headers: headerParameters,
+            query: queryParameters,
+        });
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Delete an existing occupancy entry
+     */
+    async roomsRoomOccupanciesIdDelete(requestParameters: RoomsRoomOccupanciesIdDeleteRequest): Promise<void> {
+        await this.roomsRoomOccupanciesIdDeleteRaw(requestParameters);
+    }
+
+    /**
+     * Update an existing occupancy entry
+     */
+    async roomsRoomOccupanciesIdPutRaw(requestParameters: RoomsRoomOccupanciesIdPutRequest): Promise<runtime.ApiResponse<void>> {
+        if (requestParameters.room === null || requestParameters.room === undefined) {
+            throw new runtime.RequiredError('room','Required parameter requestParameters.room was null or undefined when calling roomsRoomOccupanciesIdPut.');
+        }
+
+        if (requestParameters.id === null || requestParameters.id === undefined) {
+            throw new runtime.RequiredError('id','Required parameter requestParameters.id was null or undefined when calling roomsRoomOccupanciesIdPut.');
+        }
+
+        const queryParameters: runtime.HTTPQuery = {};
+
+        const headerParameters: runtime.HTTPHeaders = {};
+
+        if (this.configuration && this.configuration.accessToken) {
+            const token = this.configuration.accessToken;
+            const tokenString = typeof token === 'function' ? token("bearerAuth", []) : token;
+
+            if (tokenString) {
+                headerParameters["Authorization"] = `Bearer ${tokenString}`;
+            }
+        }
+        const response = await this.request({
+            path: `/rooms/{room}/occupancies/{id}`.replace(`{${"room"}}`, encodeURIComponent(String(requestParameters.room))).replace(`{${"id"}}`, encodeURIComponent(String(requestParameters.id))),
+            method: 'PUT',
+            headers: headerParameters,
+            query: queryParameters,
+        });
+
+        return new runtime.VoidApiResponse(response);
+    }
+
+    /**
+     * Update an existing occupancy entry
+     */
+    async roomsRoomOccupanciesIdPut(requestParameters: RoomsRoomOccupanciesIdPutRequest): Promise<void> {
+        await this.roomsRoomOccupanciesIdPutRaw(requestParameters);
     }
 
     /**

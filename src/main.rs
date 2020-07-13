@@ -102,6 +102,14 @@ async fn main() -> Result<()> {
                         "/rooms/{room}/occupancies",
                         web::get().to(api::get_occupancies),
                     )
+                    .route(
+                        "/rooms/{room}/occupancies/{id}",
+                        web::put().to(api::update_occupancy),
+                    )
+                    .route(
+                        "/rooms/{room}/occupancies/{id}",
+                        web::delete().to(api::delete_occupancy),
+                    )
                     .route("/rooms", web::get().to(api::all_rooms)),
             )
     })
