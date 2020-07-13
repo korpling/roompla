@@ -1,6 +1,6 @@
 <template>
   <v-container fluid>
-    <v-snackbar v-model="snackbar" top="true">{{message_text}}</v-snackbar>
+    <v-snackbar v-model="snackbar" top=true>{{message_text}}</v-snackbar>
 
     <v-toolbar color="primary" dark flat>
       <v-toolbar-items>
@@ -51,7 +51,15 @@ import moment from "moment-timezone";
 
 
 export default Vue.extend({
-  props: ["id", "timezone", "peopleAllowed"],
+  props: ["id"],
+  computed: {
+    peopleAllowed: function() {
+      return store.state.rooms[this.id].maxOccupancy;
+    },
+    timezone: function() {
+      return store.state.rooms[this.id].timezone;
+    }
+  },
   data() {
     return {
       locale: i18n.locale,

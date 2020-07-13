@@ -1,6 +1,6 @@
 <template>
   <v-container class="fill-height" fluid>
-    <v-snackbar v-model="message.show" :top="true">
+    <v-snackbar v-model="message.show" top=true>
       {{ message.text }}
       <v-btn text @click="message.show = false">Close</v-btn>
     </v-snackbar>

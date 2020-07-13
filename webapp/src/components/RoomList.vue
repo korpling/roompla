@@ -1,11 +1,11 @@
 <template>
   <v-container fluid>
-    <div v-for="r in rooms" :key="r.id">
+    <div v-for="r in store.state.rooms" :key="r.id">
       <v-card>
         <v-card-title>{{r.id}}</v-card-title>
         <v-card-text>{{$tc("people-allowed", r.maxOccupancy, {count: r.maxOccupancy})}}</v-card-text>
         <v-card-actions>
-           <router-link :to="'/room/' + r.id + '?p=' + r.maxOccupancy + '&tz=' + r.timezone">{{$t("book-time-slot")}}</router-link>
+           <router-link :to="'/room/' + r.id">{{$t("book-time-slot")}}</router-link>
         </v-card-actions>
       </v-card>
     </div>
@@ -19,11 +19,11 @@ import { RoomplaApi } from "../apis/RoomplaApi";
 import {store} from "../store";
 
 export default Vue.extend({
-  data() {
-    return { rooms: [] };
-  },
   created() {
     this.fetch_rooms();
+  },
+  data() {
+    return {store: store};
   },
   watch: {
     $route: "fetch_rooms"
@@ -31,7 +31,7 @@ export default Vue.extend({
   methods: {
     fetch_rooms: function() {
       store.state.api.roomsGet().then(
-        response => (this.rooms = response),
+        response => (store.set_rooms(response)),
         reason => {
           this.message.text = "Could not fetch rooms: " + reason;
           this.message.show = true;
