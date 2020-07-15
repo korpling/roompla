@@ -7,7 +7,7 @@ You need to have [Rust](https://www.rust-lang.org/tools/install) and [Parcel](ht
 The bundled web application is located inside the `webapp` folder and can be compiled with Parcel:
 ```bash
 cd webapp/
-parcel build src/index.html
+parcel build --public-url "/app" src/index.html
 cd ..
 ```
 

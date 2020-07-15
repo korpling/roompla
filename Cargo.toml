@@ -17,6 +17,7 @@ serde_derive = "1.0"
 actix-web = "2"
 actix-rt = "1.0"
 actix-cors = "0.2"
+actix-files = "0.2"
 jwt = "0.7"
 diesel = { version = "1.4.4", features = ["sqlite", "r2d2", "chrono"] }
 dotenv = "0.15.0"

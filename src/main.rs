@@ -90,6 +90,7 @@ async fn main() -> Result<()> {
             )
             .wrap(Logger::default())
             .wrap(Compress::new(ContentEncoding::Gzip))
+            .service(actix_files::Files::new("/app", "./webapp/dist/").show_files_listing())
             .service(
                 web::scope(&api_version)
                     .route("openapi.yml", web::get().to(get_api_spec))
