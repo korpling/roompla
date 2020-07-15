@@ -9,9 +9,10 @@ use actix_cors::Cors;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
 use dotenv::dotenv;
-use simplelog::{LevelFilter, SimpleLogger, TermLogger};
+use simplelog::{LevelFilter, SharedLogger, SimpleLogger, TermLogger};
 use std::{
     env,
+    fs::File,
     io::{Error, ErrorKind, Result},
 };
 
@@ -20,6 +21,10 @@ use actix_web::{
     middleware::{Compress, Logger},
     web, App, HttpRequest, HttpServer,
 };
+
+use daemonize::Daemonize;
+use std::io::prelude::*;
+use structopt::StructOpt;
 
 pub mod api;
 pub mod errors;
@@ -45,28 +50,7 @@ async fn get_api_spec(_req: HttpRequest) -> web::HttpResponse {
         .body(include_str!("openapi.yml"))
 }
 
-#[actix_rt::main]
-async fn main() -> Result<()> {
-    // Init logging
-    let log_filter = LevelFilter::Debug;
-
-    let log_config = simplelog::ConfigBuilder::new()
-        .add_filter_ignore_str("rustyline:")
-        .build();
-
-    if let Err(e) = TermLogger::init(
-        log_filter,
-        log_config.clone(),
-        simplelog::TerminalMode::Mixed,
-    ) {
-        println!("Error, can't initialize the terminal log output: {}.\nWill degrade to a more simple logger", e);
-        if let Err(e_simple) = SimpleLogger::init(log_filter, log_config) {
-            println!("Simple logging failed too: {}", e_simple);
-        }
-    }
-
-    info!("Logging with level {}", log_filter);
-
+async fn start_server() -> Result<()> {
     let db_pool = open_db_pool().map_err(|e| {
         Error::new(
             ErrorKind::Other,
@@ -90,7 +74,11 @@ async fn main() -> Result<()> {
             )
             .wrap(Logger::default())
             .wrap(Compress::new(ContentEncoding::Gzip))
-            .service(actix_files::Files::new("/app", "./webapp/dist/").show_files_listing())
+            .service(
+                actix_files::Files::new("/app", "./webapp/dist/")
+                    .show_files_listing()
+                    .index_file("index.html"),
+            )
             .service(
                 web::scope(&api_version)
                     .route("openapi.yml", web::get().to(get_api_spec))
@@ -117,4 +105,120 @@ async fn main() -> Result<()> {
     .bind(bind_address)?
     .run()
     .await
+}
+
+fn init_config() -> Result<()> {
+    Ok(())
+}
+
+fn init_logging(opt: &Opt) -> Result<()> {
+    let log_config = simplelog::ConfigBuilder::new().build();
+
+    let log_level = match opt {
+        Opt::Run { debug, .. } | Opt::Start { debug, .. } => {
+            if *debug {
+                LevelFilter::Debug
+            } else {
+                LevelFilter::Info
+            }
+        }
+        _ => LevelFilter::Info,
+    };
+
+    let mut loggers: Vec<Box<dyn SharedLogger>> = Vec::default();
+    if let Some(term_logger) = TermLogger::new(
+        log_level,
+        log_config.clone(),
+        simplelog::TerminalMode::Mixed,
+    ) {
+        loggers.push(term_logger);
+    } else {
+        // Use a more simple terminal logger
+        loggers.push(SimpleLogger::new(log_level, log_config.clone()));
+    }
+
+    match opt {
+        Opt::Start { log_file, .. } => {
+            if let Some(log_file) = log_file {
+                loggers.push(simplelog::WriteLogger::new(
+                    log_level,
+                    log_config.clone(),
+                    File::create(log_file)?,
+                ));
+            }
+        }
+        _ => {}
+    }
+
+    // Combine all these loggers
+    simplelog::CombinedLogger::init(loggers).expect("Could not initialize logging");
+
+    info!("Logging with level {}", log_level);
+    Ok(())
+}
+
+#[derive(Debug, StructOpt)]
+#[structopt(
+    name = "roompla",
+    about = "Roompla office room planner service and web application."
+)]
+
+enum Opt {
+    Run {
+        #[structopt(short, long, help = "Output debug messages in log")]
+        debug: bool,
+    },
+    Start {
+        #[structopt(short, long, help = "Output debug messages in log")]
+        debug: bool,
+        #[structopt(short, long, help = "The location of the output log file")]
+        log_file: Option<String>,
+    },
+    Stop {},
+}
+
+#[actix_rt::main]
+async fn main() -> Result<()> {
+    let opt = Opt::from_args();
+
+    // Init configuration and logging
+    init_config()?;
+    init_logging(&opt)?;
+
+    match opt {
+        Opt::Run { .. } => {
+            // Directly run server
+            start_server().await
+        }
+        Opt::Start { .. } => {
+            // Start server in and daemonize this process
+            let daemonize = Daemonize::new()
+                .pid_file("/tmp/roompla.pid")
+                .working_directory(".");
+
+            daemonize
+                .start()
+                .expect("Could not start service in background");
+
+            start_server().await?;
+            println!("Yeah, server started");
+            Ok(())
+        }
+        Opt::Stop { .. } => {
+            let mut pid_raw = String::new();
+            File::open("/tmp/roompla.pid")?.read_to_string(&mut pid_raw)?;
+            if let Ok(pid) = pid_raw.parse::<heim::process::Pid>() {
+                // Check if this process exists and terminate it
+                if let Ok(process) = heim::process::get(pid).await {
+                    match process.terminate().await {
+                        Ok(_) => info!("Process {} terminated", pid),
+                        Err(e) => error!("Could not terminate process {}: {}", pid, e),
+                    }
+                } else {
+                    warn!("Process {} not found", pid);
+                }
+            }
+            Ok(())
+        }
+    }
 }
