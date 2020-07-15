@@ -126,8 +126,12 @@ pub async fn login(
                     user_attributes.attrs.get("publicEMailAddress"),
                 ) {
                     if !cn.is_empty() && !email.is_empty() {
-                        let token_str =
-                            create_signed_token(&login_data.user_id, &cn[0], &email[0], &settings.as_ref())?;
+                        let token_str = create_signed_token(
+                            &login_data.user_id,
+                            &cn[0],
+                            &email[0],
+                            &settings.as_ref(),
+                        )?;
                         return Ok(HttpResponse::Ok()
                             .content_type("text/plain")
                             .body(token_str));
@@ -214,6 +218,7 @@ pub async fn add_occupancy(
         use crate::schema::rooms;
         let room: Option<Room> = rooms::dsl::rooms
             .filter(rooms::dsl::id.eq(room.as_ref()))
+            .order(rooms::dsl::id)
             .load(&conn)?
             .into_iter()
             .next();
