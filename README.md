@@ -11,7 +11,7 @@ parcel build --public-url "/app" src/index.html
 cd ..
 ```
 
-TODO: The build webapp will be served by in the roompla  server
+The build webapp will be served by in the roompla  server
 
 Build the sever with cargo:
 ```bash
@@ -19,7 +19,7 @@ cargo build --release
 ```
 You can run the server with 
 ```bash
-./target/release/roompla
+./target/release/roompla run
 ```
 
 ### Regenerationg REST client code
