@@ -75,7 +75,7 @@ import Vue from "vue";
 import ChangeEvent from "./ChangeEvent.vue";
 import { i18n } from "../lang/";
 import moment from "moment-timezone";
-import {store} from "../store";
+import { store } from "../store";
 
 export default Vue.extend({
   components: { ChangeEvent },
@@ -117,39 +117,44 @@ export default Vue.extend({
   },
   methods: {
     getEvents() {
-      const start = this.day_range.start;
-      const end = this.day_range.start + this.day_range.count;
+      const start = moment(this.$refs.calendar.lastStart);
+      const end = moment(this.$refs.calendar.lastEnd);
 
       const events = [];
-      this.store.state.api.roomsRoomOccupanciesGet({ room: this.id }).then(
-        result => {
-          if (this.timezone == null) {
-            this.timezone = "UTC";
-          }
-          for (var o of result) {
-            // Transform from UTC to local time
+      this.store.state.api
+        .roomsRoomOccupanciesGet({
+          room: this.id,
+          start: moment(start).toISOString(),
+          end: moment(end).toISOString()
+        })
+        .then(
+          result => {
+            if (this.timezone == null) {
+              this.timezone = "UTC";
+            }
+            for (var o of result) {
+              // Transform from UTC to local time
 
-            const start = moment
-              .utc(o.start)
-              .tz(this.timezone)
-              .format("YYYY-MM-DD HH:mm:ss");
-            const end = moment
-              .utc(o.end)
-              .tz(this.timezone)
-              .format("YYYY-MM-DD HH:mm:ss");
-            events.push({
-              name: o.userId,
-              start,
-              end,
-              timed: true,
-              occupancy: o
-            });
-          
-          }
-          this.events = events;
-        },
-        response => {}
-      );
+              const start = moment
+                .utc(o.start)
+                .tz(this.timezone)
+                .format("YYYY-MM-DD HH:mm:ss");
+              const end = moment
+                .utc(o.end)
+                .tz(this.timezone)
+                .format("YYYY-MM-DD HH:mm:ss");
+              events.push({
+                name: o.userId,
+                start,
+                end,
+                timed: true,
+                occupancy: o
+              });
+            }
+            this.events = events;
+          },
+          response => {}
+        );
 
       this.events = events;
     },
