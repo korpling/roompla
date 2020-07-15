@@ -69,7 +69,7 @@ async fn run_server(settings: Settings) -> Result<()> {
         )
     })?;
 
-    let bind_address = format!("localhost:{:?}", &settings.service);
+    let bind_address = format!("localhost:{}", &settings.service.port);
     let api_version = format!("/v{}", env!("CARGO_PKG_VERSION_MAJOR"),);
 
     let db_pool = web::Data::new(db_pool);
