@@ -13,7 +13,7 @@
  */
 
 
-export const BASE_PATH = "http://localhost:5050/v0".replace(/\/+$/, "");
+export const BASE_PATH = "https://korpling.org/roompla/v0".replace(/\/+$/, "");
 
 const isBlob = (value: any) => typeof Blob !== 'undefined' && value instanceof Blob;
 

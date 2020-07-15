@@ -69,7 +69,7 @@ async fn run_server(settings: Settings) -> Result<()> {
         )
     })?;
 
-    let bind_address = format!("localhost:5050");
+    let bind_address = format!("localhost:{:?}", &settings.service);
     let api_version = format!("/v{}", env!("CARGO_PKG_VERSION_MAJOR"),);
 
     let db_pool = web::Data::new(db_pool);
@@ -236,13 +236,17 @@ async fn start(settings: Settings) -> Result<()> {
         info!("Starting service");
         // Start server in and daemonize this process
         let mut daemonize = Daemonize::new()
-            .pid_file(&settings.service.pidfile)
-            .working_directory(".");
+            .pid_file(&settings.service.pidfile);
         if let Some(user) = &settings.service.user {
             daemonize = daemonize.user(user.as_ref());
         }
         if let Some(group) = &settings.service.group {
             daemonize = daemonize.group(group.as_ref());
+        }
+        if let Some(working_directory) = &settings.service.path {
+            daemonize = daemonize.working_directory(working_directory);
+        } else {
+            daemonize = daemonize.working_directory(".");
         }
 
         daemonize

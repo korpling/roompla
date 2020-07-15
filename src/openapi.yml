@@ -5,8 +5,8 @@ info:
   description: >
     Plan room occupancies and attendence
 servers:
-  - description: Your local developer service
-    url: http://localhost:5050/v0
+  - description: Korpling installation
+    url: https://korpling.org/roompla/v0
 
 security:
   - bearerAuth: []
