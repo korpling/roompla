@@ -235,9 +235,15 @@ async fn start(settings: Settings) -> Result<()> {
     } else {
         info!("Starting service");
         // Start server in and daemonize this process
-        let daemonize = Daemonize::new()
+        let mut daemonize = Daemonize::new()
             .pid_file(&settings.service.pidfile)
             .working_directory(".");
+        if let Some(user) = &settings.service.user {
+            daemonize = daemonize.user(user.as_ref());
+        }
+        if let Some(group) = &settings.service.group {
+            daemonize = daemonize.group(group.as_ref());
+        }
 
         daemonize
             .start()

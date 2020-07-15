@@ -21,6 +21,11 @@ pub struct ServiceSettings {
     pub logfile: Option<String>,
     #[serde(default = "default_pidfile")]
     pub pidfile: String,
+
+    #[serde(default)]
+    pub user: Option<String>,
+    #[serde(default)]
+    pub group: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]
