@@ -34,6 +34,7 @@ use structopt::StructOpt;
 pub mod api;
 pub mod config;
 pub mod errors;
+pub mod export;
 pub mod extractors;
 pub mod models;
 pub mod schema;
@@ -209,6 +210,8 @@ enum Opt {
     Export {
         #[structopt(help = "The output CSV file")]
         file: String,
+        #[structopt(short, long, help = "How many weeks to include", default_value = "2")]
+        weeks: u8,
     },
 }
 
@@ -240,7 +243,6 @@ async fn start(settings: Settings) -> Result<()> {
             .start()
             .expect("Could not start service in background");
 
-       
         run_server(settings).await?;
     }
     Ok(())
@@ -267,10 +269,6 @@ async fn stop(settings: Settings) -> Result<()> {
         warn!("No PID file found at {}", &settings.service.pidfile);
     }
     Ok(())
-}
-
-fn export() -> Result<()> {
-    unimplemented!()
 }
 
 #[actix_rt::main]
@@ -302,6 +300,15 @@ async fn main() -> Result<()> {
             stop(settings.clone()).await?;
             start(settings).await
         }
-        Opt::Export { .. } => export(),
+        Opt::Export { file, weeks } => {
+            match export::to_csv(&file, weeks, settings) {
+                Ok(result) => futures::future::ok(result),
+                Err(e) => {
+                    error!("Error when exporting to CSV: {:?}", e);
+                    futures::future::err(std::io::Error::new(ErrorKind::Other, format!("{:?}", e)))
+                }
+            }
+            .await
+        }
     }
 }

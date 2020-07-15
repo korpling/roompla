@@ -23,6 +23,7 @@ diesel = { version = "1.4.4", features = ["sqlite", "r2d2", "chrono"] }
 diesel_migrations = "1.4"
 r2d2 = "0.8"
 chrono = {version = "0.4", features = ["serde"]}
+chrono-tz = "0.5"
 ldap3 = "0.7"
 bcrypt = "0.8"
 hmac = "0.7"
@@ -34,3 +35,4 @@ structopt = "0.3"
 heim = "0.0.10"
 config = "0.10"
 rand = "0.7"
+csv = "1.1"
