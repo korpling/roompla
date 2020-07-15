@@ -8,8 +8,7 @@ CREATE TABLE users (
     id TEXT NOT NULL PRIMARY KEY,
     display_name TEXT NOT NULL,
     contact_info TEXT NOT NULL,
-    -- can be NULL if LDAP should be used
-    password_hash TEXT
+    password_hash TEXT NOT NULL
 );
 
 CREATE TABLE occupancies (

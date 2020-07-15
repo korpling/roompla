@@ -9,7 +9,14 @@ use sha2::Sha256;
 pub struct ClaimsFromAuth(pub Claims);
 
 fn verify_token(token: &str, settings: &Settings) -> Result<Claims, ServiceError> {
-    let key = Hmac::<Sha256>::new_varkey(settings.jwt.secret.as_deref().unwrap_or_default().as_bytes())?;
+    let key = Hmac::<Sha256>::new_varkey(
+        settings
+            .jwt
+            .secret
+            .as_deref()
+            .unwrap_or_default()
+            .as_bytes(),
+    )?;
     let claims = VerifyWithKey::<Claims>::verify_with_key(token, &key)?;
     let claim_still_valid = if let Some(exp) = claims.exp {
         // Check that the claim is still valid, thus not expired

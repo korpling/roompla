@@ -29,8 +29,4 @@ table! {
 
 joinable!(occupancies -> rooms (room));
 
-allow_tables_to_appear_in_same_query!(
-    occupancies,
-    rooms,
-    users,
-);
+allow_tables_to_appear_in_same_query!(occupancies, rooms, users,);

@@ -24,11 +24,23 @@ pub struct ServiceSettings {
 }
 
 #[derive(Debug, Deserialize, Default)]
+pub struct LDAPSettings {
+    #[serde(default = "default_ldap_url")]
+    pub url: String,
+    #[serde(default = "default_ldap_organization")]
+    pub organization: String,
+    #[serde(default = "default_ldap_filter")]
+    pub filter: String,
+}
+
+#[derive(Debug, Deserialize, Default)]
 pub struct Settings {
+    #[serde(default)]
+    pub service: ServiceSettings,
     #[serde(default)]
     pub database: DatabaseSettings,
     #[serde(default)]
-    pub service: ServiceSettings,
+    pub ldap: LDAPSettings,
     #[serde(default)]
     pub jwt: JWTSettings,
 }
@@ -62,4 +74,16 @@ fn default_database_url() -> String {
 
 fn default_pidfile() -> String {
     return "/tmp/roompla.pid".to_string();
+}
+
+fn default_ldap_url() -> String {
+    return "ldaps://ldapmaster.cms.hu-berlin.de".to_string();
+}
+
+fn default_ldap_organization() -> String {
+    return "ou=users,ou=Benutzerverwaltung,ou=Computer- und Medienservice,o=Humboldt-Universitaet zu Berlin,c=DE".to_string();
+}
+
+fn default_ldap_filter() -> String {
+    return "(uid=*)".to_string();
 }

@@ -35,7 +35,14 @@ fn create_signed_token(
     settings: &Settings,
 ) -> Result<String, ServiceError> {
     // Create the JWT token
-    let key: Hmac<Sha256> = Hmac::new_varkey(settings.jwt.secret.as_deref().unwrap_or_default().as_bytes())?;
+    let key: Hmac<Sha256> = Hmac::new_varkey(
+        settings
+            .jwt
+            .secret
+            .as_deref()
+            .unwrap_or_default()
+            .as_bytes(),
+    )?;
     // Determine an expiration date based on the configuration
     let now: chrono::DateTime<_> = chrono::Utc::now();
     let exp = if let Some(exp_config) = settings.jwt.expiration {
@@ -74,6 +81,7 @@ pub async fn login(
         .filter(id.eq(&login_data.user_id))
         .load::<User>(&conn)?;
     if let Some(u) = u.first() {
+        // The user is explicitly configured, use the stored password hash for authentification
         if let Some(actual_hash) = &u.password_hash {
             // Compare provided password with actual hash
             let verified = bcrypt::verify(&login_data.password, actual_hash)?;
@@ -88,46 +96,41 @@ pub async fn login(
                     .content_type("text/plain")
                     .body(token_str));
             }
-        } else {
-            // Query LDAP if the credentials are correct
-            let ldap_settings = ldap3::LdapConnSettings::new();
-            let (conn, mut ldap) =
-                LdapConnAsync::with_settings(ldap_settings, "ldaps://ldapmaster.cms.hu-berlin.de")
-                    .await?;
+        }
+    } else {
+        // Query LDAP if the credentials are correct
+        let ldap_settings = ldap3::LdapConnSettings::new();
+        let (conn, mut ldap) =
+            LdapConnAsync::with_settings(ldap_settings, &settings.ldap.url).await?;
 
-            ldap3::drive!(conn);
+        ldap3::drive!(conn);
 
-            let user_query = format!(
-                "uid={},ou=users,ou=Benutzerverwaltung,ou=Computer- und Medienservice,o=Humboldt-Universitaet zu Berlin,c=DE",
-                &u.id
-            );
-            let result = ldap.simple_bind(&user_query, &login_data.password).await?;
-            if result.rc == 0 {
-                // Gather additional information from LDAP
-                //let user_query = "ou=users,ou=Benutzerverwaltung,ou=Computer- und Medienservice,o=Humboldt-Universitaet zu Berlin,c=DE";
-                let (user_attributes, _) = ldap
-                    .search(
-                        &user_query,
-                        Scope::Subtree,
-                        "(uid=*)",
-                        vec!["cn", "publicEMailAddress"],
-                    )
-                    .await?
-                    .success()?;
-                if let Some(user_attributes) = user_attributes.into_iter().next() {
-                    let user_attributes = SearchEntry::construct(user_attributes);
+        let user_query = format!("uid={},{}", &login_data.user_id, settings.ldap.organization);
+        let result = ldap.simple_bind(&user_query, &login_data.password).await?;
+        if result.rc == 0 {
+            // Gather additional information from LDAP, only accept users that are also matching the filter from the configuration
+            let (user_attributes, _) = ldap
+                .search(
+                    &user_query,
+                    Scope::Subtree,
+                    &settings.ldap.filter,
+                    vec!["cn", "publicEMailAddress"],
+                )
+                .await?
+                .success()?;
+            if let Some(user_attributes) = user_attributes.into_iter().next() {
+                let user_attributes = SearchEntry::construct(user_attributes);
 
-                    if let (Some(cn), Some(email)) = (
-                        user_attributes.attrs.get("cn"),
-                        user_attributes.attrs.get("publicEMailAddress"),
-                    ) {
-                        if !cn.is_empty() && !email.is_empty() {
-                            let token_str =
-                                create_signed_token(&u.id, &cn[0], &email[0], &settings.as_ref())?;
-                            return Ok(HttpResponse::Ok()
-                                .content_type("text/plain")
-                                .body(token_str));
-                        }
+                if let (Some(cn), Some(email)) = (
+                    user_attributes.attrs.get("cn"),
+                    user_attributes.attrs.get("publicEMailAddress"),
+                ) {
+                    if !cn.is_empty() && !email.is_empty() {
+                        let token_str =
+                            create_signed_token(&login_data.user_id, &cn[0], &email[0], &settings.as_ref())?;
+                        return Ok(HttpResponse::Ok()
+                            .content_type("text/plain")
+                            .body(token_str));
                     }
                 }
             }
