@@ -117,15 +117,16 @@ export default Vue.extend({
   },
   methods: {
     getEvents() {
-      const start = moment(this.$refs.calendar.lastStart);
-      const end = moment(this.$refs.calendar.lastEnd);
+      const focus = (this.focus && this.focus != "") ? moment(this.focus) : moment();
+      const start = focus.clone().startOf("week");
+      const end = focus.clone().endOf("week");
 
       const events = [];
       this.store.state.api
         .roomsRoomOccupanciesGet({
           room: this.id,
-          start: moment(start).toISOString(),
-          end: moment(end).toISOString()
+          start: start.toISOString(),
+          end: end.toISOString()
         })
         .then(
           result => {
