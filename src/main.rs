@@ -27,6 +27,7 @@ use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
 use crate::config::Settings;
 use daemonize::Daemonize;
+use heim::process::Pid;
 use std::io::prelude::*;
 use structopt::StructOpt;
 
@@ -59,7 +60,7 @@ async fn get_api_spec(_req: HttpRequest) -> web::HttpResponse {
         .body(include_str!("openapi.yml"))
 }
 
-async fn start_server(settings: Settings) -> Result<()> {
+async fn run_server(settings: Settings) -> Result<()> {
     let db_pool = open_db_pool(&settings).map_err(|e| {
         Error::new(
             ErrorKind::Other,
@@ -121,7 +122,9 @@ async fn start_server(settings: Settings) -> Result<()> {
 
 fn init_config(opt: &Opt) -> anyhow::Result<Settings> {
     let mut settings = match opt {
-        Opt::Run { config, .. } | Opt::Start { config, .. } => Settings::with_file(config)?,
+        Opt::Run { config, .. } | Opt::Start { config, .. } | Opt::Restart { config, .. } => {
+            Settings::with_file(config)?
+        }
         _ => Settings::new()?,
     };
 
@@ -136,7 +139,7 @@ fn init_logging(opt: &Opt, settings: &Settings) -> Result<()> {
     let log_config = simplelog::ConfigBuilder::new().build();
 
     let log_level = match opt {
-        Opt::Run { debug, .. } | Opt::Start { debug, .. } => {
+        Opt::Run { debug, .. } | Opt::Start { debug, .. } | Opt::Restart { debug, .. } => {
             if *debug {
                 LevelFilter::Debug
             } else {
@@ -180,19 +183,94 @@ fn init_logging(opt: &Opt, settings: &Settings) -> Result<()> {
 )]
 
 enum Opt {
+    #[structopt(help = "Run the service in the foreground")]
     Run {
         #[structopt(short, long, help = "Output debug messages in log")]
         debug: bool,
         #[structopt(short, long, help = "Configuration file")]
         config: Option<String>,
     },
+    #[structopt(help = "Start as background service")]
     Start {
         #[structopt(short, long, help = "Output debug messages in log")]
         debug: bool,
         #[structopt(short, long, help = "Configuration file")]
         config: Option<String>,
     },
+    #[structopt(help = "Restart background service")]
+    Restart {
+        #[structopt(short, long, help = "Output debug messages in log")]
+        debug: bool,
+        #[structopt(short, long, help = "Configuration file")]
+        config: Option<String>,
+    },
+    #[structopt(help = "Stop running background service")]
     Stop {},
+    Export {
+        #[structopt(help = "The output CSV file")]
+        file: String,
+    },
+}
+
+async fn check_running(settings: &Settings) -> Option<Pid> {
+    let mut pid_raw = String::new();
+    if let Ok(mut f) = File::open(&settings.service.pidfile) {
+        if let Ok(_) = f.read_to_string(&mut pid_raw) {
+            if let Ok(pid) = pid_raw.parse::<Pid>() {
+                if let Ok(_) = heim::process::get(pid).await {
+                    return Some(pid);
+                }
+            }
+        }
+    }
+    None
+}
+
+async fn start(settings: Settings) -> Result<()> {
+    if let Some(pid) = check_running(&settings).await {
+        error!("Service is already running with PID {}", pid);
+    } else {
+        info!("Starting service");
+        // Start server in and daemonize this process
+        let daemonize = Daemonize::new()
+            .pid_file(&settings.service.pidfile)
+            .working_directory(".");
+
+        daemonize
+            .start()
+            .expect("Could not start service in background");
+
+       
+        run_server(settings).await?;
+    }
+    Ok(())
+}
+
+async fn stop(settings: Settings) -> Result<()> {
+    let mut pid_raw = String::new();
+    File::open(&settings.service.pidfile)?.read_to_string(&mut pid_raw)?;
+    if let Ok(pid) = pid_raw.parse::<heim::process::Pid>() {
+        // Check if this process exists and terminate it
+        if let Ok(process) = heim::process::get(pid).await {
+            match process.terminate().await {
+                Ok(_) => {
+                    info!("Process {} terminated", pid);
+                    // delete the PID file
+                    std::fs::remove_file(&settings.service.pidfile)?;
+                }
+                Err(e) => error!("Could not terminate process {}: {}", pid, e),
+            }
+        } else {
+            warn!("Process {} not found", pid);
+        }
+    } else {
+        warn!("No PID file found at {}", &settings.service.pidfile);
+    }
+    Ok(())
+}
+
+fn export() -> Result<()> {
+    unimplemented!()
 }
 
 #[actix_rt::main]
@@ -216,36 +294,14 @@ async fn main() -> Result<()> {
     match opt {
         Opt::Run { .. } => {
             // Directly run server
-            start_server(settings).await
+            run_server(settings).await
         }
-        Opt::Start { .. } => {
-            // Start server in and daemonize this process
-            let daemonize = Daemonize::new()
-                .pid_file(&settings.service.pidfile)
-                .working_directory(".");
-
-            daemonize
-                .start()
-                .expect("Could not start service in background");
-
-            start_server(settings).await?;
-            Ok(())
+        Opt::Start { .. } => start(settings).await,
+        Opt::Stop { .. } => stop(settings).await,
+        Opt::Restart { .. } => {
+            stop(settings.clone()).await?;
+            start(settings).await
         }
-        Opt::Stop { .. } => {
-            let mut pid_raw = String::new();
-            File::open(settings.service.pidfile)?.read_to_string(&mut pid_raw)?;
-            if let Ok(pid) = pid_raw.parse::<heim::process::Pid>() {
-                // Check if this process exists and terminate it
-                if let Ok(process) = heim::process::get(pid).await {
-                    match process.terminate().await {
-                        Ok(_) => info!("Process {} terminated", pid),
-                        Err(e) => error!("Could not terminate process {}: {}", pid, e),
-                    }
-                } else {
-                    warn!("Process {} not found", pid);
-                }
-            }
-            Ok(())
-        }
+        Opt::Export { .. } => export(),
     }
 }

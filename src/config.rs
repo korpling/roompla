@@ -1,7 +1,7 @@
 use config::ConfigError;
 use std::ops::Deref;
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct JWTSettings {
     #[serde(default)]
     pub secret: Option<String>,
@@ -9,13 +9,13 @@ pub struct JWTSettings {
     pub expiration: Option<i64>,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct DatabaseSettings {
     #[serde(default = "default_database_url")]
     pub url: String,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct ServiceSettings {
     #[serde(default)]
     pub logfile: Option<String>,
@@ -23,7 +23,7 @@ pub struct ServiceSettings {
     pub pidfile: String,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct LDAPSettings {
     #[serde(default = "default_ldap_url")]
     pub url: String,
@@ -33,7 +33,7 @@ pub struct LDAPSettings {
     pub filter: String,
 }
 
-#[derive(Debug, Deserialize, Default)]
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct Settings {
     #[serde(default)]
     pub service: ServiceSettings,
