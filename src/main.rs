@@ -1,6 +1,8 @@
 #[macro_use]
 extern crate diesel;
 #[macro_use]
+extern crate diesel_migrations;
+#[macro_use]
 extern crate serde_derive;
 #[macro_use]
 extern crate log;
@@ -8,7 +10,6 @@ extern crate log;
 use actix_cors::Cors;
 use diesel::prelude::*;
 use diesel::r2d2::{self, ConnectionManager};
-use dotenv::dotenv;
 use simplelog::{LevelFilter, SharedLogger, SimpleLogger, TermLogger};
 use std::{
     env,
@@ -22,11 +23,15 @@ use actix_web::{
     web, App, HttpRequest, HttpServer,
 };
 
+use rand::{distributions::Alphanumeric, thread_rng, Rng};
+
+use crate::config::Settings;
 use daemonize::Daemonize;
 use std::io::prelude::*;
 use structopt::StructOpt;
 
 pub mod api;
+pub mod config;
 pub mod errors;
 pub mod extractors;
 pub mod models;
@@ -34,13 +39,17 @@ pub mod schema;
 
 type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
-fn open_db_pool() -> anyhow::Result<DbPool> {
-    dotenv()?;
+embed_migrations!("migrations");
 
-    let database_url = env::var("DATABASE_URL")?;
-
-    let manager = ConnectionManager::<SqliteConnection>::new(&database_url);
+fn open_db_pool(settings: &Settings) -> anyhow::Result<DbPool> {
+    info!("Loading database from {}", &settings.database.url);
+    let manager = ConnectionManager::<SqliteConnection>::new(&settings.database.url);
     let db_pool = r2d2::Pool::builder().build(manager)?;
+
+    // Make sure the database has all migrations applied
+    let conn = db_pool.get()?;
+    embedded_migrations::run(&conn)?;
+
     Ok(db_pool)
 }
 
@@ -50,8 +59,8 @@ async fn get_api_spec(_req: HttpRequest) -> web::HttpResponse {
         .body(include_str!("openapi.yml"))
 }
 
-async fn start_server() -> Result<()> {
-    let db_pool = open_db_pool().map_err(|e| {
+async fn start_server(settings: Settings) -> Result<()> {
+    let db_pool = open_db_pool(&settings).map_err(|e| {
         Error::new(
             ErrorKind::Other,
             format!("Could not initialize service: {:?}", e),
@@ -63,9 +72,12 @@ async fn start_server() -> Result<()> {
 
     let db_pool = web::Data::new(db_pool);
 
+    let settings = web::Data::new(settings);
+
     HttpServer::new(move || {
         App::new()
             .app_data(db_pool.clone())
+            .app_data(settings.clone())
             .wrap(
                 Cors::new()
                     .allowed_headers(vec![http::header::AUTHORIZATION, http::header::ACCEPT])
@@ -107,11 +119,20 @@ async fn start_server() -> Result<()> {
     .await
 }
 
-fn init_config() -> Result<()> {
-    Ok(())
+fn init_config(opt: &Opt) -> anyhow::Result<Settings> {
+    let mut settings = match opt {
+        Opt::Run { config, .. } | Opt::Start { config, .. } => Settings::with_file(config)?,
+        _ => Settings::new()?,
+    };
+
+    // Initialize with some default
+    if settings.jwt.secret.is_none() {
+        settings.jwt.secret = Some(thread_rng().sample_iter(&Alphanumeric).take(30).collect());
+    }
+    Ok(settings)
 }
 
-fn init_logging(opt: &Opt) -> Result<()> {
+fn init_logging(opt: &Opt, settings: &Settings) -> Result<()> {
     let log_config = simplelog::ConfigBuilder::new().build();
 
     let log_level = match opt {
@@ -137,17 +158,12 @@ fn init_logging(opt: &Opt) -> Result<()> {
         loggers.push(SimpleLogger::new(log_level, log_config.clone()));
     }
 
-    match opt {
-        Opt::Start { log_file, .. } => {
-            if let Some(log_file) = log_file {
-                loggers.push(simplelog::WriteLogger::new(
-                    log_level,
-                    log_config.clone(),
-                    File::create(log_file)?,
-                ));
-            }
-        }
-        _ => {}
+    if let Some(logfile) = &settings.service.logfile {
+        loggers.push(simplelog::WriteLogger::new(
+            log_level,
+            log_config.clone(),
+            File::create(logfile)?,
+        ));
     }
 
     // Combine all these loggers
@@ -167,12 +183,14 @@ enum Opt {
     Run {
         #[structopt(short, long, help = "Output debug messages in log")]
         debug: bool,
+        #[structopt(short, long, help = "Configuration file")]
+        config: Option<String>,
     },
     Start {
         #[structopt(short, long, help = "Output debug messages in log")]
         debug: bool,
-        #[structopt(short, long, help = "The location of the output log file")]
-        log_file: Option<String>,
+        #[structopt(short, long, help = "Configuration file")]
+        config: Option<String>,
     },
     Stop {},
 }
@@ -182,31 +200,40 @@ async fn main() -> Result<()> {
     let opt = Opt::from_args();
 
     // Init configuration and logging
-    init_config()?;
-    init_logging(&opt)?;
+    let settings = init_config(&opt).map_err(|e| {
+        let cause: Vec<String> = e.chain().skip(1).map(|c| format!("{}", c)).collect();
+        Error::new(
+            ErrorKind::Other,
+            format!(
+                "Could not load configuration: {:?}\n{}",
+                e,
+                cause.join("\n")
+            ),
+        )
+    })?;
+    init_logging(&opt, &settings)?;
 
     match opt {
         Opt::Run { .. } => {
             // Directly run server
-            start_server().await
+            start_server(settings).await
         }
         Opt::Start { .. } => {
             // Start server in and daemonize this process
             let daemonize = Daemonize::new()
-                .pid_file("/tmp/roompla.pid")
+                .pid_file(&settings.service.pidfile)
                 .working_directory(".");
 
             daemonize
                 .start()
                 .expect("Could not start service in background");
 
-            start_server().await?;
-            println!("Yeah, server started");
+            start_server(settings).await?;
             Ok(())
         }
         Opt::Stop { .. } => {
             let mut pid_raw = String::new();
-            File::open("/tmp/roompla.pid")?.read_to_string(&mut pid_raw)?;
+            File::open(settings.service.pidfile)?.read_to_string(&mut pid_raw)?;
             if let Ok(pid) = pid_raw.parse::<heim::process::Pid>() {
                 // Check if this process exists and terminate it
                 if let Ok(process) = heim::process::get(pid).await {

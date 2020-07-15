@@ -82,12 +82,6 @@ impl From<std::num::ParseIntError> for ServiceError {
     }
 }
 
-impl From<dotenv::Error> for ServiceError {
-    fn from(e: dotenv::Error) -> Self {
-        ServiceError::InternalServerError(format!("{}", e))
-    }
-}
-
 impl From<ldap3::result::LdapError> for ServiceError {
     fn from(e: ldap3::result::LdapError) -> Self {
         match e {

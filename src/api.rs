@@ -1,5 +1,6 @@
 use crate::errors::ServiceError;
 use crate::{
+    config::Settings,
     extractors::ClaimsFromAuth,
     models::{NewOccupancy, Occupancy, Room, User},
     DbPool,
@@ -11,7 +12,6 @@ use hmac::{Hmac, Mac};
 use jwt::SignWithKey;
 use ldap3::{LdapConnAsync, Scope, SearchEntry};
 use sha2::Sha256;
-use std::env;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Claims {
@@ -28,28 +28,32 @@ pub struct LoginData {
     pub password: String,
 }
 
-fn create_signed_token(sub: &str, name: &str, contact_info: &str) -> Result<String, ServiceError> {
+fn create_signed_token(
+    sub: &str,
+    name: &str,
+    contact_info: &str,
+    settings: &Settings,
+) -> Result<String, ServiceError> {
     // Create the JWT token
-    let key: Hmac<Sha256> = Hmac::new_varkey(env::var("JWT_SECRET")?.as_bytes())?;
+    let key: Hmac<Sha256> = Hmac::new_varkey(settings.jwt.secret.as_deref().unwrap_or_default().as_bytes())?;
     // Determine an expiration date based on the configuration
     let now: chrono::DateTime<_> = chrono::Utc::now();
-    let exp: i64 = now
-        .checked_add_signed(chrono::Duration::minutes(
-            env::var("JWT_EXPIRATION")
-                .ok()
-                .as_deref()
-                .unwrap_or("120")
-                .parse::<i64>()?,
-        ))
-        .ok_or_else(|| {
-            ServiceError::InternalServerError(
-                "Could not add expiration time to current time".to_string(),
-            )
-        })?
-        .timestamp();
+    let exp = if let Some(exp_config) = settings.jwt.expiration {
+        let exp = now
+            .checked_add_signed(chrono::Duration::minutes(exp_config))
+            .ok_or_else(|| {
+                ServiceError::InternalServerError(
+                    "Could not add expiration time to current time".to_string(),
+                )
+            })?
+            .timestamp();
+        Some(exp)
+    } else {
+        None
+    };
     let claims = Claims {
         sub: sub.to_string(),
-        exp: Some(exp),
+        exp: exp,
         name: name.to_string(),
         contact_info: contact_info.to_string(),
     };
@@ -61,6 +65,7 @@ fn create_signed_token(sub: &str, name: &str, contact_info: &str) -> Result<Stri
 pub async fn login(
     login_data: web::Json<LoginData>,
     db_pool: web::Data<DbPool>,
+    settings: web::Data<Settings>,
 ) -> Result<HttpResponse, ServiceError> {
     // Get the corresponding user entry from the database
     use crate::schema::users::dsl::*;
@@ -73,7 +78,12 @@ pub async fn login(
             // Compare provided password with actual hash
             let verified = bcrypt::verify(&login_data.password, actual_hash)?;
             if verified {
-                let token_str = create_signed_token(&u.id, &u.display_name, &u.contact_info)?;
+                let token_str = create_signed_token(
+                    &u.id,
+                    &u.display_name,
+                    &u.contact_info,
+                    settings.as_ref(),
+                )?;
                 return Ok(HttpResponse::Ok()
                     .content_type("text/plain")
                     .body(token_str));
@@ -112,7 +122,8 @@ pub async fn login(
                         user_attributes.attrs.get("publicEMailAddress"),
                     ) {
                         if !cn.is_empty() && !email.is_empty() {
-                            let token_str = create_signed_token(&u.id, &cn[0], &email[0])?;
+                            let token_str =
+                                create_signed_token(&u.id, &cn[0], &email[0], &settings.as_ref())?;
                             return Ok(HttpResponse::Ok()
                                 .content_type("text/plain")
                                 .body(token_str));
