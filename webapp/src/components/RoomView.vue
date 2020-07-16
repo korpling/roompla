@@ -118,7 +118,8 @@ export default Vue.extend({
   },
   methods: {
     getEvents() {
-      const focus = (this.focus && this.focus != "") ? moment(this.focus) : moment();
+      const focus =
+        this.focus && this.focus != "" ? moment(this.focus) : moment();
       const start = focus.clone().startOf("week");
       const end = focus.clone().endOf("week");
 
@@ -265,13 +266,28 @@ export default Vue.extend({
     },
     endDrag() {
       if (this.createEvent) {
+        // Parse date
+        let start = moment.utc(this.createEvent.start);
+        let end = moment.utc(this.createEvent.end);
+        // Make sure the range is at least one hour
+        if (end.isBefore(start)) {
+          end = start;
+        }
+        if (
+          start
+            .clone()
+            .add(1, "hours")
+            .isSameOrAfter(end)
+        ) {
+          end = start.clone().add(1, "hours");
+        }
         // submit event to rest API
         this.store.state.api
           .roomsRoomOccupanciesPut({
             room: this.id,
             timeRange: {
-              start: moment.utc(this.createEvent.start).toISOString(),
-              end: moment.utc(this.createEvent.end).toISOString()
+              start: start.toISOString(),
+              end: end.toISOString()
             }
           })
           .then(

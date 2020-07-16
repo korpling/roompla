@@ -10,7 +10,7 @@ interface RoomMap {
 
 export function getAPIBasePath() {
     if (process.env.NODE_ENV === 'development') {
-        return "http://localhost:5050/v0";
+        return "http://localhost:5050/roompla/v0";
     } else {
         return "/roompla/v0";
     }
