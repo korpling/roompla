@@ -43,6 +43,8 @@ pub mod schema;
 type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
 embed_migrations!("migrations");
+use std::collections::HashMap;
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 fn open_db_pool(settings: &Settings) -> anyhow::Result<DbPool> {
     info!("Loading database from {}", &settings.database.url);
@@ -71,13 +73,15 @@ async fn run_server(settings: Settings) -> Result<()> {
     })?;
 
     let bind_address = format!("localhost:{}", &settings.service.port);
-    let api_version = format!("/v{}", env!("CARGO_PKG_VERSION_MAJOR"),);
+    let api_version = format!("/roompla/v{}", env!("CARGO_PKG_VERSION_MAJOR"),);
 
     let db_pool = web::Data::new(db_pool);
 
     let settings = web::Data::new(settings);
 
     HttpServer::new(move || {
+        let generated = generate();
+        
         App::new()
             .app_data(db_pool.clone())
             .app_data(settings.clone())
@@ -89,11 +93,9 @@ async fn run_server(settings: Settings) -> Result<()> {
             )
             .wrap(Logger::default())
             .wrap(Compress::new(ContentEncoding::Gzip))
-            .service(
-                actix_files::Files::new("/app", "./webapp/dist/")
-                    .show_files_listing()
-                    .index_file("index.html"),
-            )
+            .service(actix_web_static_files::ResourceFiles::new(
+                "/roompla/app", generated,
+            ))
             .service(
                 web::scope(&api_version)
                     .route("openapi.yml", web::get().to(get_api_spec))
@@ -142,6 +144,7 @@ fn init_config() -> anyhow::Result<(PathBuf, Settings)> {
     if settings.jwt.secret.is_none() {
         settings.jwt.secret = Some(thread_rng().sample_iter(&Alphanumeric).take(30).collect());
     }
+
     Ok((config_file, settings))
 }
 
@@ -286,7 +289,7 @@ async fn main() -> Result<()> {
         )
     })?;
     init_logging(&settings)?;
-
+    
     info!(
         "Attempting to load configuration from {}",
         config_file_location.to_string_lossy()

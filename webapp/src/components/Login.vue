@@ -46,6 +46,7 @@
 import Vue from "vue";
 import { Configuration } from "../runtime";
 import { RoomplaApi } from "../apis";
+import { getAPIBasePath } from "../store";
 
 export default Vue.extend({
   data() {
@@ -62,7 +63,7 @@ export default Vue.extend({
   },
   methods: {
     attempt_login: function(event) {
-      let api = new RoomplaApi();
+      let api = new RoomplaApi(new Configuration({ basePath: getAPIBasePath() }));
       let result = api.loginPost({
         credentials: this.credentials
       });
