@@ -162,14 +162,37 @@ pub async fn all_rooms(
     Ok(HttpResponse::Ok().json(rooms))
 }
 
-fn check_if_room_available<Conn: Connection<Backend = diesel::sqlite::Sqlite>, Tz: TimeZone>(
+fn check_if_room_available<Conn, Tz>(
     conn: &Conn,
     room: &Room,
     start: DateTime<Tz>,
     end: DateTime<Tz>,
     ignore_id: Option<i32>,
-) -> Result<bool, ServiceError> {
+) -> Result<bool, ServiceError>
+where
+    Conn: Connection<Backend = diesel::sqlite::Sqlite>,
+    Tz: TimeZone + std::fmt::Display,
+    Tz::Offset: std::fmt::Display,
+{
     use crate::schema::occupancies::dsl;
+
+    // Do some general validity checks
+    if end <= start {
+        return Err(ServiceError::BadRequest(format!(
+            "Begin of time range ({}) ist after end of range ({}).",
+            &start.to_rfc3339(),
+            &end.to_rfc3339(),
+        )));
+    }
+
+    if start.date() != end.date() {
+        return Err(ServiceError::BadRequest(format!(
+            "Start ({}) and end ({}) of time range must be on the same day.",
+            &start.to_rfc3339(),
+            &end.to_rfc3339(),
+        )));
+    }
+
     // Check the number of persons per partially overlapped full hour
     let mut t = start.clone();
     while t <= end {
@@ -204,13 +227,6 @@ pub async fn add_occupancy(
     // Parse the dates and round them to the full hour
     let start = DateTime::parse_from_rfc3339(&event.start)?.duration_round(Duration::hours(1))?;
     let end = DateTime::parse_from_rfc3339(&event.end)?.duration_round(Duration::hours(1))?;
-
-    if end <= start {
-        return Ok(HttpResponse::Forbidden().json(format!(
-            "Begin of time range ({}) ist after end of range ({}).",
-            start, end
-        )));
-    }
 
     let conn = db_pool.get()?;
     let result = conn.transaction::<_, ServiceError, _>(|| {
