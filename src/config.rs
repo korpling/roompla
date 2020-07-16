@@ -17,9 +17,8 @@ pub struct DatabaseSettings {
 
 #[derive(Debug, Deserialize, Default, Clone)]
 pub struct ServiceSettings {
-
     #[serde(default = "default_service_port")]
-    pub port : u16,
+    pub port: u16,
 
     #[serde(default)]
     pub logfile: Option<String>,
@@ -99,7 +98,6 @@ fn default_ldap_organization() -> String {
 fn default_ldap_filter() -> String {
     return "(uid=*)".to_string();
 }
-
 
 fn default_service_port() -> u16 {
     return 5050;
