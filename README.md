@@ -2,7 +2,7 @@
 
 ## How to build and run
 
-You need to have [Rust](https://www.rust-lang.org/tools/install).
+You need to have [Rust](https://www.rust-lang.org/tools/install) and `npm` installed.
 
 Build the server with cargo:
 ```bash
