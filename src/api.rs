@@ -179,7 +179,7 @@ where
     // Do some general validity checks
     if end <= start {
         return Err(ServiceError::BadRequest(format!(
-            "Begin of time range ({}) ist after end of range ({}).",
+            "Begin of time range ({}) is after end of range ({}).",
             &start.to_rfc3339(),
             &end.to_rfc3339(),
         )));
