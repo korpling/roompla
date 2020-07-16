@@ -73,7 +73,7 @@ async fn run_server(settings: Settings) -> Result<()> {
     })?;
 
     let bind_address = format!("localhost:{}", &settings.service.port);
-    let api_version = format!("/v{}", env!("CARGO_PKG_VERSION_MAJOR"),);
+    let api_version = format!("/roompla/v{}", env!("CARGO_PKG_VERSION_MAJOR"),);
 
     let db_pool = web::Data::new(db_pool);
 
@@ -94,7 +94,7 @@ async fn run_server(settings: Settings) -> Result<()> {
             .wrap(Logger::default())
             .wrap(Compress::new(ContentEncoding::Gzip))
             .service(actix_web_static_files::ResourceFiles::new(
-                "/app", generated,
+                "/roompla/app", generated,
             ))
             .service(
                 web::scope(&api_version)

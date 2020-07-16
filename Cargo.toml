@@ -8,6 +8,7 @@ build = "build.rs"
 
 [features]
 npm = []
+default = ["npm"]
 
 [dependencies]
 simplelog = "0.7"

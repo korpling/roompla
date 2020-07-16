@@ -1,18 +1,17 @@
-#[cfg(npm)]
-fn build_npm() -> anyhow::Result<()> {
-    use actix_web_static_files::NpmBuild;
-    NpmBuild::new("./webapp")
-        .install()?
-        .run("build")?
-        .to_resource_dir()
-        .build()?;
-    Ok(())
-}
+use actix_web_static_files::resource_dir;
+use actix_web_static_files::NpmBuild;
 
-#[cfg(not(npm))]
 fn build_npm() -> anyhow::Result<()> {
-    use actix_web_static_files::resource_dir;
-    resource_dir("./webapp/dist/").build()?;
+    if cfg!(npm) {
+        resource_dir("./webapp/dist/").build()?;
+    } else {
+        NpmBuild::new("./webapp")
+            .install()?
+            .run("build")?
+            .target("./webapp/dist")
+            .to_resource_dir()
+            .build()?;
+    }
     Ok(())
 }
 
