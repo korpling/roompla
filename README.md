@@ -1,6 +1,6 @@
 # Korpling Room Planner (roompla)
 
-## How to build
+## How to build and run
 
 You need to have [Rust](https://www.rust-lang.org/tools/install) and [Parcel](https://parceljs.org/getting_started.html) installed.
 
@@ -13,20 +13,26 @@ cd ..
 
 The built webapp will be served by the roompla  server
 
-Build the sever with cargo:
+Build the server with cargo:
 ```bash
 cargo build --release
+
 ```
+
+### Run server
+
 You can run the server with 
 ```bash
 ./target/release/roompla run
 ```
 
-To change the configuration file roompla uses (per default `roompla.toml` in the working directory), use the `ROOMPLA_CONFIG` environment variable
+To change the configuration file roompla uses (per default `roompla.toml` in the working directory), use the `ROOMPLA_CONFIG` environment variable.
 
 ```bash
 ROOMPLA_CONFIG=roompla.example.toml ./target/release/roompla run
 ```
+
+An example file (`roompla.example.toml`) with the various configuration options is included in this repository.
 
 ### Regenerationg REST client code
 
