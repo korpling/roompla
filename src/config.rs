@@ -35,6 +35,12 @@ pub struct ServiceSettings {
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]
+pub struct LogSettings {
+    #[serde(default)]
+    pub debug: bool,
+}
+
+#[derive(Debug, Deserialize, Default, Clone)]
 pub struct LDAPSettings {
     #[serde(default = "default_ldap_url")]
     pub url: String,
@@ -54,6 +60,8 @@ pub struct Settings {
     pub ldap: LDAPSettings,
     #[serde(default)]
     pub jwt: JWTSettings,
+    #[serde(default)]
+    pub log: LogSettings,
 }
 
 impl Settings {
@@ -66,7 +74,7 @@ impl Settings {
         config.try_into()
     }
 
-    pub fn with_file<S: Deref<Target = str>>(config_file: &Option<S>) -> Result<Self, ConfigError> {
+    pub fn with_file<S: Deref<Target = str>>(config_file: Option<S>) -> Result<Self, ConfigError> {
         let mut config = config::Config::default();
         config.merge(config::File::from_str(
             include_str!("default-settings.toml"),

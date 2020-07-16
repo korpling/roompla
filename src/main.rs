@@ -27,8 +27,9 @@ use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
 use crate::config::Settings;
 use daemonize::Daemonize;
+use dotenv::dotenv;
 use heim::process::Pid;
-use std::io::prelude::*;
+use std::{io::prelude::*, path::PathBuf};
 use structopt::StructOpt;
 
 pub mod api;
@@ -121,12 +122,20 @@ async fn run_server(settings: Settings) -> Result<()> {
     .await
 }
 
-fn init_config(opt: &Opt) -> anyhow::Result<Settings> {
-    let mut settings = match opt {
-        Opt::Run { config, .. } | Opt::Start { config, .. } | Opt::Restart { config, .. } => {
-            Settings::with_file(config)?
-        }
-        _ => Settings::new()?,
+fn init_config() -> anyhow::Result<Settings> {
+    dotenv()?;
+
+    // Check if a configuration file is given via the environment
+    let config_file = env::var("ROOMPLA_CONFIG")
+        .ok()
+        .unwrap_or_else(|| "roompla.toml".to_string());
+
+    let config_file = PathBuf::from(config_file);
+
+    let mut settings = if config_file.is_file() {
+        Settings::with_file(Some(config_file.to_string_lossy()))?
+    } else {
+        Settings::new()?
     };
 
     // Initialize with some default
@@ -136,18 +145,13 @@ fn init_config(opt: &Opt) -> anyhow::Result<Settings> {
     Ok(settings)
 }
 
-fn init_logging(opt: &Opt, settings: &Settings) -> Result<()> {
+fn init_logging(settings: &Settings) -> Result<()> {
     let log_config = simplelog::ConfigBuilder::new().build();
 
-    let log_level = match opt {
-        Opt::Run { debug, .. } | Opt::Start { debug, .. } | Opt::Restart { debug, .. } => {
-            if *debug {
-                LevelFilter::Debug
-            } else {
-                LevelFilter::Info
-            }
-        }
-        _ => LevelFilter::Info,
+    let log_level = if settings.log.debug {
+        LevelFilter::Debug
+    } else {
+        LevelFilter::Info
     };
 
     let mut loggers: Vec<Box<dyn SharedLogger>> = Vec::default();
@@ -185,28 +189,13 @@ fn init_logging(opt: &Opt, settings: &Settings) -> Result<()> {
 
 enum Opt {
     #[structopt(help = "Run the service in the foreground")]
-    Run {
-        #[structopt(short, long, help = "Output debug messages in log")]
-        debug: bool,
-        #[structopt(short, long, help = "Configuration file")]
-        config: Option<String>,
-    },
+    Run,
     #[structopt(help = "Start as background service")]
-    Start {
-        #[structopt(short, long, help = "Output debug messages in log")]
-        debug: bool,
-        #[structopt(short, long, help = "Configuration file")]
-        config: Option<String>,
-    },
+    Start,
     #[structopt(help = "Restart background service")]
-    Restart {
-        #[structopt(short, long, help = "Output debug messages in log")]
-        debug: bool,
-        #[structopt(short, long, help = "Configuration file")]
-        config: Option<String>,
-    },
+    Restart,
     #[structopt(help = "Stop running background service")]
-    Stop {},
+    Stop,
     Export {
         #[structopt(help = "The output CSV file")]
         file: String,
@@ -285,7 +274,7 @@ async fn main() -> Result<()> {
     let opt = Opt::from_args();
 
     // Init configuration and logging
-    let settings = init_config(&opt).map_err(|e| {
+    let settings = init_config().map_err(|e| {
         let cause: Vec<String> = e.chain().skip(1).map(|c| format!("{}", c)).collect();
         Error::new(
             ErrorKind::Other,
@@ -296,16 +285,16 @@ async fn main() -> Result<()> {
             ),
         )
     })?;
-    init_logging(&opt, &settings)?;
+    init_logging(&settings)?;
 
     match opt {
-        Opt::Run { .. } => {
+        Opt::Run => {
             // Directly run server
             run_server(settings).await
         }
-        Opt::Start { .. } => start(settings).await,
-        Opt::Stop { .. } => stop(settings).await,
-        Opt::Restart { .. } => {
+        Opt::Start => start(settings).await,
+        Opt::Stop => stop(settings).await,
+        Opt::Restart => {
             stop(settings.clone()).await?;
             start(settings).await
         }
