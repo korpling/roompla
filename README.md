@@ -2,16 +2,7 @@
 
 ## How to build and run
 
-You need to have [Rust](https://www.rust-lang.org/tools/install) and [Parcel](https://parceljs.org/getting_started.html) installed.
-
-The bundled web application is located inside the `webapp` folder and can be compiled with Parcel:
-```bash
-cd webapp/
-parcel build --public-url "/app" src/index.html
-cd ..
-```
-
-The built webapp will be served by the roompla  server
+You need to have [Rust](https://www.rust-lang.org/tools/install).
 
 Build the server with cargo:
 ```bash
@@ -33,6 +24,17 @@ ROOMPLA_CONFIG=roompla.example.toml ./target/release/roompla run
 ```
 
 An example file (`roompla.example.toml`) with the various configuration options is included in this repository.
+
+If you want to develop the web application and don't want to recompile the rust service on every change, you
+can start a live server for the web application.
+
+The bundled web application is located inside the `webapp` folder and can be compiled with [Parcel](https://parceljs.org/getting_started.html):
+```bash
+cd webapp/
+parcel build --public-url "/app" src/index.html
+cd ..
+```
+
 
 ### Regenerationg REST client code
 
