@@ -43,6 +43,8 @@ pub mod schema;
 type DbPool = r2d2::Pool<ConnectionManager<SqliteConnection>>;
 
 embed_migrations!("migrations");
+use std::collections::HashMap;
+include!(concat!(env!("OUT_DIR"), "/generated.rs"));
 
 fn open_db_pool(settings: &Settings) -> anyhow::Result<DbPool> {
     info!("Loading database from {}", &settings.database.url);
@@ -78,6 +80,8 @@ async fn run_server(settings: Settings) -> Result<()> {
     let settings = web::Data::new(settings);
 
     HttpServer::new(move || {
+        let generated = generate();
+        
         App::new()
             .app_data(db_pool.clone())
             .app_data(settings.clone())
@@ -89,11 +93,9 @@ async fn run_server(settings: Settings) -> Result<()> {
             )
             .wrap(Logger::default())
             .wrap(Compress::new(ContentEncoding::Gzip))
-            .service(
-                actix_files::Files::new("/app", "./webapp/dist/")
-                    .show_files_listing()
-                    .index_file("index.html"),
-            )
+            .service(actix_web_static_files::ResourceFiles::new(
+                "/app", generated,
+            ))
             .service(
                 web::scope(&api_version)
                     .route("openapi.yml", web::get().to(get_api_spec))
