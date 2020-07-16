@@ -11,7 +11,7 @@ parcel build --public-url "/app" src/index.html
 cd ..
 ```
 
-The build webapp will be served by in the roompla  server
+The built webapp will be served by the roompla  server
 
 Build the sever with cargo:
 ```bash
