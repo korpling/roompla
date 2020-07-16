@@ -26,6 +26,7 @@ To change the configuration file roompla uses (per default `roompla.toml` in the
 
 ```bash
 ROOMPLA_CONFIG=roompla.example.toml ./target/release/roompla run
+```
 
 ### Regenerationg REST client code
 
