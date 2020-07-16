@@ -122,7 +122,7 @@ async fn run_server(settings: Settings) -> Result<()> {
     .await
 }
 
-fn init_config() -> anyhow::Result<Settings> {
+fn init_config() -> anyhow::Result<(PathBuf, Settings)> {
     dotenv()?;
 
     // Check if a configuration file is given via the environment
@@ -142,7 +142,7 @@ fn init_config() -> anyhow::Result<Settings> {
     if settings.jwt.secret.is_none() {
         settings.jwt.secret = Some(thread_rng().sample_iter(&Alphanumeric).take(30).collect());
     }
-    Ok(settings)
+    Ok((config_file, settings))
 }
 
 fn init_logging(settings: &Settings) -> Result<()> {
@@ -231,7 +231,7 @@ async fn start(settings: Settings) -> Result<()> {
         if let Some(group) = &settings.service.group {
             daemonize = daemonize.group(group.as_ref());
         }
-        if let Some(working_directory) = &settings.service.path {
+        if let Some(working_directory) = &settings.service.working_directory {
             daemonize = daemonize.working_directory(working_directory);
         } else {
             daemonize = daemonize.working_directory(".");
@@ -274,7 +274,7 @@ async fn main() -> Result<()> {
     let opt = Opt::from_args();
 
     // Init configuration and logging
-    let settings = init_config().map_err(|e| {
+    let (config_file_location, settings) = init_config().map_err(|e| {
         let cause: Vec<String> = e.chain().skip(1).map(|c| format!("{}", c)).collect();
         Error::new(
             ErrorKind::Other,
@@ -286,6 +286,11 @@ async fn main() -> Result<()> {
         )
     })?;
     init_logging(&settings)?;
+
+    info!(
+        "Attempting to load configuration from {}",
+        config_file_location.to_string_lossy()
+    );
 
     match opt {
         Opt::Run => {

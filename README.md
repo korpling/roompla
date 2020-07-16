@@ -22,6 +22,11 @@ You can run the server with
 ./target/release/roompla run
 ```
 
+To change the configuration file roompla uses (per default `roompla.toml` in the working directory), use the `ROOMPLA_CONFIG` environment variable
+
+```bash
+ROOMPLA_CONFIG=roompla.example.toml ./target/release/roompla run
+
 ### Regenerationg REST client code
 
 We use OpenAPI to describe the REST API. 

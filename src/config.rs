@@ -31,7 +31,7 @@ pub struct ServiceSettings {
     pub group: Option<String>,
 
     #[serde(default)]
-    pub path: Option<String>,
+    pub working_directory: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]

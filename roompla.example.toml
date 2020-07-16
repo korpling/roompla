@@ -1,0 +1,39 @@
+[log]
+# Set to true to log debug messages
+debug = false
+
+[service]
+# The port the service should listen on
+port = 5050
+# A path to write the logfile to, if not given messages are
+# only printed to the console
+logfile = "/tmp/roompla.log"
+# A path to a file containing the service PID 
+# (used for stopping existing processes)
+pidfile = "/tmp/roompla.pid"
+# The user as which the service should be started
+user = "roompla"
+# The group as which the service should be started
+group = "www-data"
+# Working directory of the service
+working_directory = "."
+
+[database]
+# URL to the SQLite file used by roompla
+url = "roompla.sqlite"
+
+[ldap]
+# URL to the LDAP server
+url = "ldaps://ldap.example.com"
+# Organization query string for determining which LDAP users to include
+organization = "ou=users,ou=Benutzerverwaltung,ou=Computer- und Medienservice,o=Humboldt-Universitaet zu Berlin,c=DE"
+# Additional LDAP filter for users to include
+filter = "(uid=*)"
+
+[jwt]
+# Experiration time of the authentification tokens in minutes
+expiration = 120
+# Internal secret to sign the authentification tokens: omit this field
+# to create a random one on each start (which is not stored anywhere).
+# If you store the secret in this file, make sure no one without proper authorization has read access to it
+secret = "THIS IS NOT A SECURE SECRET, REPLACE ME"
