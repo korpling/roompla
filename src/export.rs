@@ -35,7 +35,15 @@ pub fn to_csv(file: &str, weeks: u8, settings: Settings) -> Result<()> {
         let mut writer = csv::Writer::from_path(file)?;
 
         // Write header
-        writer.write_record(&["id", "name", "contact", "room", "day"])?;
+        writer.write_record(&[
+            "id",
+            "name",
+            "contact",
+            "room",
+            "day",
+            "start_time",
+            "end_time",
+        ])?;
 
         for (event, room) in result {
             // Convert stored dates to local time and just output the day, not the time
@@ -45,15 +53,25 @@ pub fn to_csv(file: &str, weeks: u8, settings: Settings) -> Result<()> {
             } else {
                 chrono_tz::Tz::UTC
             };
-            let day_utc: DateTime<Utc> = DateTime::from_utc(event.start, Utc);
-            let day: Date<chrono_tz::Tz> = day_utc.with_timezone(&tz).date();
+            let event_start_utc: DateTime<Utc> = DateTime::from_utc(event.start, Utc);
+            let event_end_utc: DateTime<Utc> = DateTime::from_utc(event.end, Utc);
+
+            let event_start: DateTime<chrono_tz::Tz> = event_start_utc.with_timezone(&tz);
+            let event_end: DateTime<chrono_tz::Tz> = event_end_utc.with_timezone(&tz);
+
+            let event_day: Date<chrono_tz::Tz> = event_start.date();
+
+            let event_start_time = event_start.time();
+            let event_end_time = event_end.time();
 
             writer.write_record(&[
                 event.user_id,
                 event.user_name,
                 event.user_contact,
                 event.room,
-                day.to_string(),
+                event_day.to_string(),
+                event_start_time.to_string(),
+                event_end_time.to_string(),
             ])?;
         }
         info!("Finished export to {}", file);
