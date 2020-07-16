@@ -133,7 +133,7 @@ fn init_config() -> anyhow::Result<(PathBuf, Settings)> {
     let config_file = PathBuf::from(config_file);
 
     let mut settings = if config_file.is_file() {
-        Settings::with_file(Some(config_file.to_string_lossy()))?
+        Settings::with_file(config_file.to_string_lossy())?
     } else {
         Settings::new()?
     };

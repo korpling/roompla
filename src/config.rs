@@ -74,15 +74,13 @@ impl Settings {
         config.try_into()
     }
 
-    pub fn with_file<S: Deref<Target = str>>(config_file: Option<S>) -> Result<Self, ConfigError> {
+    pub fn with_file<S: Deref<Target = str>>(config_file: S) -> Result<Self, ConfigError> {
         let mut config = config::Config::default();
         config.merge(config::File::from_str(
             include_str!("default-settings.toml"),
             config::FileFormat::Toml,
         ))?;
-        if let Some(config_file) = config_file {
-            config.merge(config::File::new(&config_file, config::FileFormat::Toml))?;
-        }
+        config.merge(config::File::new(&config_file, config::FileFormat::Toml))?;
         config.try_into()
     }
 }
