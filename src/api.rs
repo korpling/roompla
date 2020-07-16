@@ -157,7 +157,7 @@ pub async fn all_rooms(
 
     // Get the general room capacity
     use crate::schema::rooms;
-    let rooms: Vec<Room> = rooms::dsl::rooms.load(&conn)?;
+    let rooms: Vec<Room> = rooms::dsl::rooms.order(rooms::dsl::id).load(&conn)?;
 
     Ok(HttpResponse::Ok().json(rooms))
 }
