@@ -41,6 +41,7 @@
       ref="calendar"
       type="week"
       v-model="focus"
+      event-overlap-mode="column"
       :events="events"
       :first-interval="day_range.start"
       :interval-count="day_range.count"
