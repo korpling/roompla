@@ -2,6 +2,7 @@
   "devDependencies": {
     "@vue/component-compiler-utils": "^3.1.2",
     "cssnano": "^4.1.10",
+    "parcel-bundler": "^1.12.4",
     "typescript": "^3.9.6",
     "vue-template-compiler": "^2.6.11"
   },
@@ -14,5 +15,9 @@
     "vue-i18n": "^8.18.2",
     "vue-router": "^3.3.4",
     "vuetify": "^2.3.4"
+  },
+  "scripts": {
+    "dev": "parcel src/index.html",
+    "build": "parcel build src/index.html"
   }
 }

@@ -39,3 +39,4 @@ dotenv = "0.15"
 
 [build-dependencies]
 actix-web-static-files = "2.0"
+anyhow = "1"
