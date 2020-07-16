@@ -123,7 +123,7 @@ async fn run_server(settings: Settings) -> Result<()> {
 }
 
 fn init_config() -> anyhow::Result<(PathBuf, Settings)> {
-    dotenv()?;
+    dotenv().ok();
 
     // Check if a configuration file is given via the environment
     let config_file = env::var("ROOMPLA_CONFIG")
