@@ -144,6 +144,7 @@ fn init_config() -> anyhow::Result<(PathBuf, Settings)> {
     if settings.jwt.secret.is_none() {
         settings.jwt.secret = Some(thread_rng().sample_iter(&Alphanumeric).take(30).collect());
     }
+
     Ok((config_file, settings))
 }
 
@@ -288,7 +289,7 @@ async fn main() -> Result<()> {
         )
     })?;
     init_logging(&settings)?;
-
+    
     info!(
         "Attempting to load configuration from {}",
         config_file_location.to_string_lossy()
