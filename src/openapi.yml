@@ -6,7 +6,7 @@ info:
     Plan room occupancies and attendence
 servers:
   - description: Local developer instance
-    url: http://localhost:5050/v0
+    url: http://localhost:5050/roompla/v0
 
 security:
   - bearerAuth: []

@@ -6,7 +6,7 @@
     "room-name": "Raum {msg}",
     "room-list": "Raumliste",
     "people-allowed": "1 Person erlaubt | {count} Personen erlaubt",
-    "book-time-slot": "Arbeitszeit eintragen",
+    "book-time-slot": "Anwesenheit eintragen",
     "hours-selection": "Stundenanzeige",
     "working-hours": "Arbeitstag",
     "whole-day": "Ganzer Tag",
