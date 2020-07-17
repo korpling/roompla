@@ -16,5 +16,6 @@
     "next-week": "Nächste Woche",
     "previous-week": "Vorherige Woche",
     "room-full": "Raum ist zum gewählten Zeitbereich bereits voll.",
-    "to": "bis"
+    "to": "bis",
+    "go-back-room-list": "Zurück zur Raumübersicht"
 }

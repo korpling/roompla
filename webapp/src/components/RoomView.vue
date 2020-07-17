@@ -4,8 +4,15 @@
 
     <v-toolbar color="primary" dark flat>
       <v-toolbar-items>
-        <v-btn icon label="Go back to room list" v-on:click="goHome">
-          <v-icon>mdi-arrow-left</v-icon>
+        <v-btn icon color="lime" :title="$t('go-back-room-list')" v-on:click="goHome">
+          <v-icon>mdi-home-group</v-icon>
+        </v-btn>
+        <v-btn :title="$t('previous-week')" v-on:click="previousWeek" icon>
+          <v-icon>mdi-chevron-left</v-icon>
+        </v-btn>
+        <v-btn color="primary" v-on:click="focus=''">{{$t("calendar-week", [getCalendarWeek()])}}</v-btn>
+        <v-btn :title="$t('next-week')" v-on:click="nextWeek" icon>
+          <v-icon>mdi-chevron-right</v-icon>
         </v-btn>
         <v-select
           v-model="day_range"
@@ -16,17 +23,13 @@
           class="ma-2"
           :label="$t('hours-selection')"
         ></v-select>
-        <v-btn :title="$t('previous-week')" v-on:click="previousWeek" icon>
-          <v-icon>mdi-chevron-left</v-icon>
-        </v-btn>
-        <v-btn color="primary" v-on:click="focus=''">{{$t("calendar-week", [getCalendarWeek()])}}</v-btn>
-        <v-btn :title="$t('next-week')" v-on:click="nextWeek" icon>
-          <v-icon>mdi-chevron-right</v-icon>
-        </v-btn>
       </v-toolbar-items>
-      <v-toolbar-title>{{$t("room-name", {msg: id}) }}</v-toolbar-title>
     </v-toolbar>
     <div class="text-center ma-2">
+      <v-chip label color="lime">
+        <v-icon>mdi-home</v-icon>
+        {{$t("room-name", {msg: id}) }}
+      </v-chip>
       <v-chip label color="primary">
         <v-icon>mdi-account-multiple</v-icon>
         {{$tc("people-allowed", peopleAllowed, {count: peopleAllowed})}}

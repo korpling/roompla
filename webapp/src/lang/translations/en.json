@@ -16,5 +16,6 @@
     "next-week": "Next Week",
     "previous-week": "Previous Week",
     "room-full": "Room is already full for the selected time range.",
-    "to": "to"
+    "to": "to",
+    "go-back-room-list": "Go back to room list"
 }
