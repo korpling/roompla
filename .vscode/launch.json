@@ -19,7 +19,9 @@
                     "kind": "bin"
                 }
             },
-            "args": ["run"],
+            "args": [
+                "run"
+            ],
             "cwd": "${workspaceFolder}"
         },
         {
@@ -42,22 +44,28 @@
             "cwd": "${workspaceFolder}"
         },
         {
-            "name": "Attach to Firefox",
+            "name": "Debug Web Application in Firefox",
             "type": "firefox",
-            "request": "attach",
+            "request": "launch",
             "url": "http://localhost:1234/",
+            "reAttach": true,
+            "suggestPathMappingWizard": true,
             "pathMappings": [
-                {
-                    "url": "http://localhost:1234/src/runtime.ts",
-                    "path": "${workspaceFolder}/webapp/src/runtime.ts"
-                },
                 {
                     "url": "http://localhost:1234/src/apis",
                     "path": "${workspaceFolder}/webapp/src/apis"
                 },
                 {
+                    "url": "http://localhost:1234/src/models",
+                    "path": "${workspaceFolder}/webapp/src/models"
+                },
+                {
                     "url": "http://localhost:1234/src/App.vue",
                     "path": "${workspaceFolder}/webapp/src/App.vue"
+                },
+                {
+                    "url": "http://localhost:1234/src/components",
+                    "path": "${workspaceFolder}/webapp/src/components"
                 }
             ]
         }
