@@ -4,17 +4,21 @@
 
 You need to have [Rust](https://www.rust-lang.org/tools/install) and `npm` installed.
 
-Build the server with cargo:
+Build the server with cargo when using a local checkout:
 ```bash
 cargo build --release
+```
 
+Or install the latest released version from [crates.io](https://crates.io):
+```bash
+cargo install roompla
 ```
 
 ### Run server
 
 You can run the server with 
 ```bash
-./target/release/roompla run
+roompla run
 ```
 
 To change the configuration file roompla uses (per default `roompla.toml` in the working directory), use the `ROOMPLA_CONFIG` environment variable.
@@ -24,6 +28,8 @@ ROOMPLA_CONFIG=roompla.example.toml ./target/release/roompla run
 ```
 
 An example file (`roompla.example.toml`) with the various configuration options is included in this repository.
+
+### Live server for the web application
 
 If you want to develop the web application and don't want to recompile the rust service on every change, you
 can start a live server for the web application.
