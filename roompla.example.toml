@@ -8,15 +8,6 @@ port = 5050
 # A path to write the logfile to, if not given messages are
 # only printed to the console
 logfile = "/tmp/roompla.log"
-# A path to a file containing the service PID 
-# (used for stopping existing processes)
-pidfile = "/tmp/roompla.pid"
-# The user as which the service should be started
-user = "roompla"
-# The group as which the service should be started
-group = "www-data"
-# Working directory of the service
-working_directory = "."
 
 [database]
 # URL to the SQLite file used by roompla

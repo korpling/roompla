@@ -24,8 +24,10 @@ roompla
 To change the configuration file roompla uses (per default `roompla.toml` in the working directory), use the `ROOMPLA_CONFIG` environment variable.
 
 ```bash
-ROOMPLA_CONFIG=roompla.example.toml ./target/release/roompla run
+ROOMPLA_CONFIG=roompla.example.toml ./target/release/roompla
 ```
+
+There is an example systemd service configuration for Roompla in `deploy/roompla.service`.
 
 An example file (`roompla.example.toml`) with the various configuration options is included in this repository.
 
@@ -50,4 +52,12 @@ The TypeScript code can be regenerated with the [OpenAPI generator](https://open
 ```bash
 java -jar openapi-generator-cli.jar generate -i src/openapi.yml -o webapp/src -g typescript-fetch -c webapp/openapi-codegen-config.json
 
+```
+
+## Export reports
+
+Roompla can export CSV files with report for the last n weeks of room attendence using the `export` sub-command
+
+```bash
+roompla export /path/to/report.csv --weeks 3
 ```

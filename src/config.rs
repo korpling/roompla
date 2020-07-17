@@ -22,16 +22,6 @@ pub struct ServiceSettings {
 
     #[serde(default)]
     pub logfile: Option<String>,
-    #[serde(default = "default_pidfile")]
-    pub pidfile: String,
-
-    #[serde(default)]
-    pub user: Option<String>,
-    #[serde(default)]
-    pub group: Option<String>,
-
-    #[serde(default)]
-    pub working_directory: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Default, Clone)]
@@ -87,10 +77,6 @@ impl Settings {
 
 fn default_database_url() -> String {
     return "roompla.sqlite".to_string();
-}
-
-fn default_pidfile() -> String {
-    return "/tmp/roompla.pid".to_string();
 }
 
 fn default_ldap_url() -> String {

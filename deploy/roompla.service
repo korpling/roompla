@@ -1,0 +1,13 @@
+[Unit]
+Description=Roompla Office Room Planner
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/roompla
+Environment="ROOMPLA_CONFIG=/opt/roompla/config.toml"
+User=roompla
+Group=roompla
+WorkingDirectory=/opt/roompla/
+
+[Install]
+WantedBy=multi-user.target

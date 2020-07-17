@@ -26,10 +26,8 @@ use actix_web::{
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 
 use crate::config::Settings;
-use daemonize::Daemonize;
 use dotenv::dotenv;
-use heim::process::Pid;
-use std::{io::prelude::*, path::PathBuf};
+use std::path::PathBuf;
 use structopt::StructOpt;
 
 pub mod api;
@@ -187,12 +185,6 @@ fn init_logging(settings: &Settings) -> Result<()> {
 
 #[derive(StructOpt)]
 enum Command {
-    #[structopt(help = "Start as background service")]
-    Start,
-    #[structopt(help = "Restart background service")]
-    Restart,
-    #[structopt(help = "Stop running background service")]
-    Stop,
     Export {
         #[structopt(help = "The output CSV file")]
         file: String,
@@ -209,71 +201,6 @@ enum Command {
 struct Opt {
     #[structopt(subcommand)]
     cmd: Option<Command>,
-}
-
-async fn check_running(settings: &Settings) -> Option<Pid> {
-    let mut pid_raw = String::new();
-    if let Ok(mut f) = File::open(&settings.service.pidfile) {
-        if let Ok(_) = f.read_to_string(&mut pid_raw) {
-            if let Ok(pid) = pid_raw.parse::<Pid>() {
-                if let Ok(_) = heim::process::get(pid).await {
-                    return Some(pid);
-                }
-            }
-        }
-    }
-    None
-}
-
-async fn start(settings: Settings) -> Result<()> {
-    if let Some(pid) = check_running(&settings).await {
-        error!("Service is already running with PID {}", pid);
-    } else {
-        info!("Starting service");
-        // Start server in and daemonize this process
-        let mut daemonize = Daemonize::new().pid_file(&settings.service.pidfile);
-        if let Some(user) = &settings.service.user {
-            daemonize = daemonize.user(user.as_ref());
-        }
-        if let Some(group) = &settings.service.group {
-            daemonize = daemonize.group(group.as_ref());
-        }
-        if let Some(working_directory) = &settings.service.working_directory {
-            daemonize = daemonize.working_directory(working_directory);
-        } else {
-            daemonize = daemonize.working_directory(".");
-        }
-
-        daemonize
-            .start()
-            .expect("Could not start service in background");
-
-        run_server(settings).await?;
-    }
-    Ok(())
-}
-
-async fn stop(settings: Settings) -> Result<()> {
-    let mut pid_raw = String::new();
-    File::open(&settings.service.pidfile)?.read_to_string(&mut pid_raw)?;
-    if let Ok(pid) = pid_raw.parse::<heim::process::Pid>() {
-        // Check if this process exists and terminate it
-        if let Ok(process) = heim::process::get(pid).await {
-            match process.terminate().await {
-                Ok(_) => {
-                    info!("Process {} terminated", pid);
-                    // delete the PID file
-                    std::fs::remove_file(&settings.service.pidfile)?;
-                }
-                Err(e) => error!("Could not terminate process {}: {}", pid, e),
-            }
-        } else {
-            warn!("Process {} not found", pid);
-        }
-    } else {
-        warn!("No PID file found at {}", &settings.service.pidfile);
-    }
-    Ok(())
 }
 
 #[actix_rt::main]
@@ -301,12 +228,6 @@ async fn main() -> Result<()> {
 
     if let Some(cmd) = opt.cmd {
         match cmd {
-            Command::Start => start(settings).await,
-            Command::Stop => stop(settings).await,
-            Command::Restart => {
-                stop(settings.clone()).await?;
-                start(settings).await
-            }
             Command::Export { file, weeks } => {
                 match export::to_csv(&file, weeks, settings) {
                     Ok(result) => futures::future::ok(result),
