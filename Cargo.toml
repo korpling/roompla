@@ -5,6 +5,7 @@ authors = ["Thomas Krause <krauseto@hu-berlin.de>"]
 edition = "2018"
 license = "Apache-2.0"
 build = "build.rs"
+description = "This is a web application and REST service that allows you too book time slots in a room and export reports who was using a room."
 
 [features]
 npm = []

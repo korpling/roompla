@@ -9,9 +9,9 @@ Build the server with cargo when using a local checkout:
 cargo build --release
 ```
 
-Or install the latest released version from [crates.io](https://crates.io):
+Or install the binary from GitHub
 ```bash
-cargo install roompla
+cargo install --git roompla https://github.com/korpling/roompla.git
 ```
 
 ### Run server
