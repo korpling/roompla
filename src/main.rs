@@ -81,7 +81,7 @@ async fn run_server(settings: Settings) -> Result<()> {
 
     HttpServer::new(move || {
         let generated = generate();
-        
+
         App::new()
             .app_data(db_pool.clone())
             .app_data(settings.clone())
@@ -94,7 +94,8 @@ async fn run_server(settings: Settings) -> Result<()> {
             .wrap(Logger::default())
             .wrap(Compress::new(ContentEncoding::Gzip))
             .service(actix_web_static_files::ResourceFiles::new(
-                "/roompla/app", generated,
+                "/roompla/app",
+                generated,
             ))
             .service(
                 web::scope(&api_version)
@@ -184,15 +185,8 @@ fn init_logging(settings: &Settings) -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(
-    name = "roompla",
-    about = "Roompla office room planner service and web application."
-)]
-
-enum Opt {
-    #[structopt(help = "Run the service in the foreground")]
-    Run,
+#[derive(StructOpt)]
+enum Command {
     #[structopt(help = "Start as background service")]
     Start,
     #[structopt(help = "Restart background service")]
@@ -205,6 +199,16 @@ enum Opt {
         #[structopt(short, long, help = "How many weeks to include", default_value = "2")]
         weeks: u8,
     },
+}
+
+#[derive(StructOpt)]
+#[structopt(
+    name = "roompla",
+    about = "Roompla office room planner service and web application."
+)]
+struct Opt {
+    #[structopt(subcommand)]
+    cmd: Option<Command>,
 }
 
 async fn check_running(settings: &Settings) -> Option<Pid> {
@@ -289,32 +293,36 @@ async fn main() -> Result<()> {
         )
     })?;
     init_logging(&settings)?;
-    
+
     info!(
         "Attempting to load configuration from {}",
         config_file_location.to_string_lossy()
     );
 
-    match opt {
-        Opt::Run => {
-            // Directly run server
-            run_server(settings).await
-        }
-        Opt::Start => start(settings).await,
-        Opt::Stop => stop(settings).await,
-        Opt::Restart => {
-            stop(settings.clone()).await?;
-            start(settings).await
-        }
-        Opt::Export { file, weeks } => {
-            match export::to_csv(&file, weeks, settings) {
-                Ok(result) => futures::future::ok(result),
-                Err(e) => {
-                    error!("Error when exporting to CSV: {:?}", e);
-                    futures::future::err(std::io::Error::new(ErrorKind::Other, format!("{:?}", e)))
-                }
+    if let Some(cmd) = opt.cmd {
+        match cmd {
+            Command::Start => start(settings).await,
+            Command::Stop => stop(settings).await,
+            Command::Restart => {
+                stop(settings.clone()).await?;
+                start(settings).await
             }
-            .await
+            Command::Export { file, weeks } => {
+                match export::to_csv(&file, weeks, settings) {
+                    Ok(result) => futures::future::ok(result),
+                    Err(e) => {
+                        error!("Error when exporting to CSV: {:?}", e);
+                        futures::future::err(std::io::Error::new(
+                            ErrorKind::Other,
+                            format!("{:?}", e),
+                        ))
+                    }
+                }
+                .await
+            }
         }
+    } else {
+        // Directly run server
+        run_server(settings).await
     }
 }
