@@ -18,7 +18,7 @@ cargo install --git https://github.com/korpling/roompla.git
 
 You can run the server with 
 ```bash
-roompla run
+roompla
 ```
 
 To change the configuration file roompla uses (per default `roompla.toml` in the working directory), use the `ROOMPLA_CONFIG` environment variable.
