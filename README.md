@@ -11,7 +11,7 @@ cargo build --release
 
 Or install the binary from GitHub
 ```bash
-cargo install --git roompla https://github.com/korpling/roompla.git
+cargo install --git https://github.com/korpling/roompla.git
 ```
 
 ### Run server
